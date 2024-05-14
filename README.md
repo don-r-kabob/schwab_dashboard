@@ -1,6 +1,10 @@
 # schwab_dashboard
 A slightly better way to watch how you lose money
 
+Install dependencies:
+
+```pip3 install -r requirements.txt```
+
 
 Getting a token:
 
@@ -20,4 +24,5 @@ Then it will provide you with a page to go to for schwab login. Copy and bpase c
 Start dashbaord
 ```streamlit run streamlit_dashboard```
 
+click the link in the output or click below:
 http://localhost:8501
