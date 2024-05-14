@@ -168,7 +168,7 @@ def __account_change(client=None):
 
 def position_filtering(con: st.container):
     with con:
-        st.title("RED ALERT")
+        st.title("Position Review")
         filter_field = st.selectbox(
             "Filter",
             ["%OTM"]
