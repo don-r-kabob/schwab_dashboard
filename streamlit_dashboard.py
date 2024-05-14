@@ -251,30 +251,8 @@ def main(**argv):
 
     make_todays_stats(stats, client=client)
     position_filtering(pos_filter_con)
-    #st.json(schwabdata.get_todays_orders(ahash=st.session_state[states.ACTIVE_HASH], conf=CONFIG).text)
-    #st.write(schwabdata.get_todays_orders(ahash=states.ACTIVE_ACCOUNT_HASH, conf=CONFIG).text)
-
-
-    #def get_positions_json(config: Config):
-    #    acc_json = client.get_account(config.accountnum, fields=[ACCOUNT_FIELDS.POSITIONS]).json()
-    #    accdata = acc_json['securitiesAccount']
-    #    positions = accdata['positions']
-   #     return positions
-
-#def get_display_df(ad: AccountData, index: list =["Stats"]):
-#    d = {}
-#    d['NLV'] = ad.nlv
-#    d['BPu'] = ad.bpu
-#    d['Buying Power'] = ad.bp_available
-#    d['Short Unit Max'] = ad.sutmax
-#    df = pd.DataFrame(d, index=index)
-#    return df
-
-
-
 
 if __name__ == '__main__':
-    print("Starting LottoBuddy")
     CONFIG = Config()
     ap = argparse.ArgumentParser()
     ap.add_argument(
