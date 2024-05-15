@@ -29,8 +29,8 @@ with open("dashboard_config.yaml", 'r') as dconf_fh:
 
 REFRESH_TIME_MS = 1000*dashconfig['streamlit']['refreshtimer']
 refresh_count = 0
-if dashconfig['streamlit']['widelayout'] is True:
-    st.set_page_config(layout="wide")
+layout_set = False
+st.set_page_config(layout=dashconfig['streamlit']['pagelayout'])
 st_autorefresh(interval=REFRESH_TIME_MS, limit=None, key="dashboard_referesh_timer")
 
 
