@@ -145,9 +145,9 @@ def make_todays_stats(
         #todays_pct = round(todays_premium/adata.nlv * 100,2)
             #order_counts = schwabdata.get_order_count(client, conf)
         col_1, col_2, col3 = st.columns(3)
-        col_1.write("NLV:")
+        col_1.write("Listed Equity NLV:")
         col_2.write(f"{current_nlv}")
-        col3.write(f"{(nlv_perc*100):.2f}%")
+        #col3.write(f"{(nlv_perc*100):.2f}%")
         col_1.write("Today's Premium:")
         col_2.write(f"{tp_display}")
         col3.write(f"{(todays_percent*100):.2f}%")
@@ -235,7 +235,7 @@ def main(**argv):
     st.session_state[states.ACTIVE_HASH] = alist.get_hash(st.session_state[states.ACTIVE_ACCOUNT])
     acc_json = client.get_account(account_hash=st.session_state[states.ACTIVE_HASH], fields=[ACCOUNT_FIELDS.POSITIONS]).json()
     st.session_state[states.ACCOUNTS_JSON] = acc_json
-    #st.json(acc_json)
+    st.json(acc_json)
     st.session_state[states.POSITIONS_JSON] = acc_json['securitiesAccount']['positions']
     #st.json(st.session_state[states.POSITIONS_JSON])
     sidebar_account_info(account_json=acc_json)
