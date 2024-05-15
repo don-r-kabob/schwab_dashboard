@@ -29,8 +29,8 @@ with open("dashboard_config.yaml", 'r') as dconf_fh:
 
 REFRESH_TIME_MS = 1000*dashconfig['streamlit']['refreshtimer']
 refresh_count = 0
-if dashconfig['streamlit']['widelayout'] is True:
-    st.set_page_config(layout="wide")
+layout_set = False
+st.set_page_config(layout=dashconfig['streamlit']['pagelayout'])
 st_autorefresh(interval=REFRESH_TIME_MS, limit=None, key="dashboard_referesh_timer")
 
 
@@ -145,9 +145,10 @@ def make_todays_stats(
         #todays_pct = round(todays_premium/adata.nlv * 100,2)
             #order_counts = schwabdata.get_order_count(client, conf)
         col_1, col_2, col3 = st.columns(3)
-        col_1.write("NLV:")
+        col_1.write("Listed Equity NLV:")
         col_2.write(f"{current_nlv}")
-        col3.write(f"{(nlv_perc*100):.2f}%")
+        #col3.write(f"{(nlv_perc*100:.2f}%")
+        col3.write("(Disabled)")
         col_1.write("Today's Premium:")
         col_2.write(f"{tp_display}")
         col3.write(f"{(todays_percent*100):.2f}%")
@@ -170,6 +171,8 @@ def __account_change(client=None):
     client = get_schwab_client(conf)
     st.session_state[states.ACCOUNTS_JSON] = json.loads(client.get_account(alist.get_hash(aa), fields=[ACCOUNT_FIELDS.POSITIONS]).text)
     st.session_state[states.POSITIONS_JSON] = st.session_state[states.ACCOUNTS_JSON]['securitiesAccount']['positions']
+    #st.json(st.session_state)
+    print(st.session_state)
     return
 
 

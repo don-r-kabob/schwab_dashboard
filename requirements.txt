@@ -5,3 +5,4 @@ schwab-py
 streamlit-autorefresh
 matplotlib
 seaborn
+six

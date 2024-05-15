@@ -78,6 +78,8 @@ def _get_pos_df(client=None, conf=None):
     pdf['today'] = datetime.today()
     pdf['dte'] = (pdf['edate']-pdf['today']).dt.days
     pdf['otm'] = abs((pdf['strikePrice']/pdf['spotPrice'])-1)
+    pdf.loc[(pdf['ctype']=="C") & (pdf['strikePrice'] < pdf['spotPrice']), 'otm'] *= -1
+    pdf.loc[(pdf['ctype']=="P") & (pdf['strikePrice'] > pdf['spotPrice']), 'otm'] *= -1
     #st.dataframe(pdf)
     return pdf
 

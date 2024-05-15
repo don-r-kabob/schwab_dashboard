@@ -1,7 +1,7 @@
 
 streamlit:
   refreshtimer: 300
-  widelayout: true
+  pagelayout: wide
 schwab:
   configfile: schwab.app_config.json
   tokenfile: schwab.token_file.json

@@ -18,18 +18,22 @@ import matplotlib.pyplot as plt
 import schwab
 import streamlit_dashboard as sd
 
-st.json(st.session_state)
+st.write(st.session_state[states.ACTIVE_ACCOUNT])
+st.json(st.session_state, expanded=False)
 
 if states.CONFIG in st.session_state:
     CONFIG = st.session_state[states.CONFIG]
 
-default_account = CONFIG.defaultAccount
-if states.ACTIVE_ACCOUNT in st.session_state:
-    default_account = st.session_state[states.ACTIVE_ACCOUNT]
-sd.sidebar_account_select(alist=st.session_state[states.ACCOUNT_LIST], default_account=default_account)
+#default_account = CONFIG.defaultAccount
+#if states.ACTIVE_ACCOUNT in st.session_state:
+#    default_account = st.session_state[states.ACTIVE_ACCOUNT]
+#sd.sidebar_account_select(alist=st.session_state[states.ACCOUNT_LIST], default_account=default_account)
+sd.sidebar_account_select(alist=st.session_state[states.ACCOUNT_LIST], default_account=st.session_state[states.ACTIVE_ACCOUNT])
 
 
 sd.sidebar_account_info(account_json=st.session_state[states.ACCOUNTS_JSON])
+st.write(st.session_state[states.ACTIVE_ACCOUNT])
+st.stop()
 #print(__name__)
 #print(st.session_state['configfile'])
 
