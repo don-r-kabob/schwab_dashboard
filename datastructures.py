@@ -17,6 +17,8 @@ class Config(object):
         fh.close()
         for k in c:
             setattr(self, k, c[k])
+        if self.defaultAccount is int:
+            self.defaultAccount = str(self.defaultAccount)
 
     def write_config(self, cfile):
         fh = open(cfile, 'w')
