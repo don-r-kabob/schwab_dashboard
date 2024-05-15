@@ -235,7 +235,7 @@ def main(**argv):
     st.session_state[states.ACTIVE_HASH] = alist.get_hash(st.session_state[states.ACTIVE_ACCOUNT])
     acc_json = client.get_account(account_hash=st.session_state[states.ACTIVE_HASH], fields=[ACCOUNT_FIELDS.POSITIONS]).json()
     st.session_state[states.ACCOUNTS_JSON] = acc_json
-    st.json(acc_json)
+    #st.json(acc_json)
     st.session_state[states.POSITIONS_JSON] = acc_json['securitiesAccount']['positions']
     #st.json(st.session_state[states.POSITIONS_JSON])
     sidebar_account_info(account_json=acc_json)
