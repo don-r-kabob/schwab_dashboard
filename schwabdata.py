@@ -25,7 +25,7 @@ def flatten_positions(pjson):
             pass
     return
 
-def get_pos_df(client=None, conf=None):
+def _get_pos_df(client=None, conf=None):
     if client is None:
         if conf is None:
             if states.CONFIG in st.session_state:
@@ -36,7 +36,15 @@ def get_pos_df(client=None, conf=None):
     try:
         if states.POSITIONS_JSON not in st.session_state:
             pass
-        position_data = copy.deepcopy(st.session_state[states.POSITIONS_JSON])
+        if states.POSITIONS_JSON in st.session_state:
+            position_data = copy.deepcopy(st.session_state[states.POSITIONS_JSON])
+        else:
+            if states.ACCOUNTS_JSON not in st.session_state:
+                acc_json = client.get_account(account_hash=st.session_state[states.ACTIVE_HASH],
+                                              fields=[ACCOUNT_FIELDS.POSITIONS]).json()
+                st.session_state[states.ACCOUNTS_JSON] = acc_json
+                position_data = acc_json['securitiesAccount']['positions']
+
         flatten_positions(position_data)
         pdf = pd.DataFrame(position_data)
         pdf['spotPrice'] = 0.0
@@ -71,6 +79,10 @@ def get_pos_df(client=None, conf=None):
     pdf['dte'] = (pdf['edate']-pdf['today']).dt.days
     pdf['otm'] = abs((pdf['strikePrice']/pdf['spotPrice'])-1)
     #st.dataframe(pdf)
+    return pdf
+
+def get_pos_df(client=None, conf=None):
+    pdf = _get_pos_df(client=client, conf=conf)
     subdf = pdf.loc[
         (pdf['assetType']=="OPTION")
         & (pdf['quantity'] < 0),

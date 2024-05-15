@@ -157,12 +157,19 @@ def make_todays_stats(
 
 
 def __account_change(client=None):
+    print("ACCOUNT CHANGE!")
     aa = st.session_state[states.ACTIVE_ACCOUNT]
     conf = st.session_state[states.CONFIG]
+    alist = st.session_state[states.ACCOUNT_LIST]
     st.session_state = {
         states.ACTIVE_ACCOUNT: aa,
-        states.CONFIG: conf
+        states.CONFIG: conf,
+        states.ACCOUNT_LIST: alist,
+        states.ACTIVE_HASH: alist.get_hash(aa)
     }
+    client = get_schwab_client(conf)
+    st.session_state[states.ACCOUNTS_JSON] = json.loads(client.get_account(alist.get_hash(aa), fields=[ACCOUNT_FIELDS.POSITIONS]).text)
+    st.session_state[states.POSITIONS_JSON] = st.session_state[states.ACCOUNTS_JSON]['securitiesAccount']['positions']
     return
 
 
@@ -228,7 +235,10 @@ def main(**argv):
     alist = AccountList(jdata=accounts_json)
     st.session_state[states.ACCOUNT_LIST] = alist
     acc_json = None
-    sidebar_account_select(alist, default_account=conf.defaultAccount)
+    active_account = conf.defaultAccount
+    if states.ACTIVE_ACCOUNT in st.session_state:
+        active_account = st.session_state[states.ACTIVE_ACCOUNT]
+    sidebar_account_select(alist, default_account=active_account)
     if states.ACTIVE_ACCOUNT not in st.session_state or st.session_state[states.ACTIVE_ACCOUNT] is None:
         st.write("Please Select an account")
         st.stop()

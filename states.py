@@ -8,6 +8,7 @@ class states():
     CONFIG_FILE = "CONFIG_FILE"
     TOKEN_FILE = "TOKEN_FILE"
     ACCOUNT_LIST = "ACCOUNT_LIST"
+    DEFAULT_ACCOUNT = "DEFAULT_ACCOUNT"
 
 class orderres():
     FILLED = "FILLED"
