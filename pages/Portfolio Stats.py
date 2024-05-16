@@ -1,7 +1,10 @@
 import sys
 import os
 
+import yaml
+
 import schwabdata
+from account import AccountList
 
 script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(script_path)
@@ -16,9 +19,17 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import streamlit_dashboard as sd
 
+with open("dashboard_config.yaml", 'r') as dconf_fh:
+    dashconfig = yaml.load(dconf_fh, Loader=yaml.Loader)
 
 if states.CONFIG in st.session_state:
     CONFIG = st.session_state[states.CONFIG]
+if states.ACCOUNT_LIST not in st.session_state:
+    client = sd.get_schwab_client(CONFIG)
+    accounts_json = client.get_account_numbers().json()
+    alist = AccountList(jdata=accounts_json)
+
+
 sd.sidebar_account_select(alist=st.session_state[states.ACCOUNT_LIST], default_account=st.session_state[states.ACTIVE_ACCOUNT])
 
 
