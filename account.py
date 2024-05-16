@@ -59,15 +59,16 @@ class AccountList (object):
         except FileNotFoundError:
             return None
 
-    def build(self, account_list_file=None,
-              jdata=None,
-              client=None
+    def build(
+            self,
+            account_list_file=None,
+            jdata=None
     ):
         if jdata is not None:
             self.from_json(jdata)
         if self.read_alfile(account_list_file) is None:
             if jdata is not None:
-                self.from_json(j)
+                self.from_json(j=jdata)
                 self.expiration_time = datetime.datetime.timestamp() + DAY_IN_MS
 
 
@@ -101,8 +102,6 @@ class AccountList (object):
         if datetime.datetime.now() > self.expiration_time:
             if client is None:
                 raise Exception("No client to update accounts")
-
-
         return
 
 
@@ -127,6 +126,7 @@ class AccountList (object):
                 }
             )
         return d
+
     def get_account_numbers(self):
         return self._by_account.keys()
 

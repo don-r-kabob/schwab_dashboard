@@ -83,7 +83,7 @@ def get_schwab_client(conf: Config = None):
         else:
             raise Exception("Unable to create client")
     if c is not None:
-        sys.stderr.write(json.dumps(c.__dict__, indent=4))
+        #sys.stderr.write(json.dumps(c.__dict__, indent=4))
         return schwab.auth.easy_client(
             c.apikey,
             c.apisecretkey,
@@ -115,7 +115,7 @@ def make_todays_stats(
                 client=client
             )
             order_json = st.session_state[states.ORDERS_JSON]
-            positions_json = st.session_state[states.POSITIONS_JSON]
+            #positions_json = st.session_state[states.POSITIONS_JSON]
             account_json = st.session_state[states.ACCOUNTS_JSON]
         except Exception as e:
             print(e)
@@ -157,22 +157,30 @@ def make_todays_stats(
         #col_2.write("\t{}".format(order_counts))
 
 
-def __account_change(client=None):
-    print("ACCOUNT CHANGE!")
-    aa = st.session_state[states.ACTIVE_ACCOUNT]
+def __account_change(client=None, active_account=None):
+    #print("ACCOUNT CHANGE!")
+    #aa = active_account
+    if active_account is None and states.ACTIVE_ACCOUNT in st.session_state:
+        active_account = st.session_state[states.ACTIVE_ACCOUNT]
     conf = st.session_state[states.CONFIG]
     alist = st.session_state[states.ACCOUNT_LIST]
     st.session_state = {
-        states.ACTIVE_ACCOUNT: aa,
+        states.ACTIVE_ACCOUNT: active_account,
         states.CONFIG: conf,
         states.ACCOUNT_LIST: alist,
-        states.ACTIVE_HASH: alist.get_hash(aa)
+        states.ACTIVE_HASH: alist.get_hash(active_account)
     }
     client = get_schwab_client(conf)
-    st.session_state[states.ACCOUNTS_JSON] = json.loads(client.get_account(alist.get_hash(aa), fields=[ACCOUNT_FIELDS.POSITIONS]).text)
+    st.session_state[states.ACCOUNTS_JSON] = json.loads(
+        client.get_account(
+            alist.get_hash(active_account),
+            fields=[ACCOUNT_FIELDS.POSITIONS]
+        ).text
+    )
     st.session_state[states.POSITIONS_JSON] = st.session_state[states.ACCOUNTS_JSON]['securitiesAccount']['positions']
+    #print(st.session_state[states.ACTIVE_ACCOUNT])
     #st.json(st.session_state)
-    print(st.session_state)
+    #print(st.session_state)
     return
 
 
@@ -214,14 +222,19 @@ def sidebar_account_select(
             default_index = anum_list.index(default_account)
         else:
             default_index = 0
-        st.session_state[states.ACTIVE_ACCOUNT] = st.selectbox(
+
+        selected_account = st.selectbox(
             "Account Select",
             anum_list,
-            index=default_index,
-            on_change=__account_change
-            #kwargs={"client": None}
+            index=default_index
+            #on_change=__account_change,
+            #args=(selected_account,)
+            #kwargs={"client": None, "active_account": selected_account}
             #on_change=st.rerun
         )
+        st.session_state[states.ACTIVE_ACCOUNT] = selected_account
+        __account_change(client=None, active_account=selected_account)
+
     return
 
 
