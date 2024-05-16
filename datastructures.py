@@ -11,7 +11,7 @@ class Config(object):
         self.defaultAccount = None
 
     def read_config(self, config_file):
-        print("Reading config")
+        #print("Reading config")
         fh = open(config_file, 'r')
         c = json.load(fh)
         fh.close()

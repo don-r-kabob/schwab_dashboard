@@ -121,7 +121,7 @@ def get_todays_orders(
         conf: Config = None,
         client = None
 ):
-    print("Getting today's orders")
+    #print("Getting today's orders")
     if client is None:
         client = schwab.auth.easy_client(conf.apikey, conf.apisecretkey, conf.callbackuri, conf.tokenpath)
     bod = datetime.today().replace(hour=0, minute=0, second=0)

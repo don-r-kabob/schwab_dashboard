@@ -6,3 +6,4 @@ streamlit-autorefresh
 matplotlib
 seaborn
 six
+Authlib

@@ -3,6 +3,7 @@ import sys
 import json
 import argparse
 
+import authlib as authlib
 import schwab
 from schwab.client.base import BaseClient
 import yaml
@@ -84,12 +85,16 @@ def get_schwab_client(conf: Config = None):
             raise Exception("Unable to create client")
     if c is not None:
         #sys.stderr.write(json.dumps(c.__dict__, indent=4))
-        return schwab.auth.easy_client(
-            c.apikey,
-            c.apisecretkey,
-            c.callbackuri,
-            c.tokenpath
-        )
+        try:
+            return schwab.auth.easy_client(
+                c.apikey,
+                c.apisecretkey,
+                c.callbackuri,
+                c.tokenpath
+            )
+        except authlib.integrations.base_client.errors.OAuthError as oae:
+            st.write("Please recreate authorization token")
+            st.stop()
     else:
         raise Exception("Unable to create client")
 
@@ -99,7 +104,7 @@ def make_todays_stats(
         client = None,
         config: Config = None
 ):
-    print("Getting today's stats")
+    #print("Getting today's stats")
     with con:
         st.header("Today's Stats")
         if client is None:
@@ -246,8 +251,13 @@ def main(**argv):
     conf: Config = CONFIG
     #st.json(conf.__dict__)
     st.cache_data(ttl=dashconfig['streamlit']['refreshtimer'])
-    client = schwab.auth.easy_client(conf.apikey, conf. apisecretkey, conf.callbackuri, conf.tokenpath)
-    accounts_json = client.get_account_numbers().json()
+    try:
+        client = get_schwab_client(conf)
+        accounts_json = client.get_account_numbers().json()
+    except authlib.integrations.base_client.errors.OAuthError as oae:
+        st.write("Please recreate authorization token")
+        st.stop()
+
     alist = AccountList(jdata=accounts_json)
     st.session_state[states.ACCOUNT_LIST] = alist
     acc_json = None
