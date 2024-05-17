@@ -76,28 +76,6 @@ def sidebar_account_info(
         else:
             st.write("Failed to get Account Info")
 
-def get_schwab_client(conf: Config = None):
-    c = conf
-    if c is None:
-        if states.CONFIG in st.session_state:
-            c = st.session_state[states.CONFIG]
-        else:
-            raise Exception("Unable to create client")
-    if c is not None:
-        #sys.stderr.write(json.dumps(c.__dict__, indent=4))
-        try:
-            return schwab.auth.easy_client(
-                c.apikey,
-                c.apisecretkey,
-                c.callbackuri,
-                c.tokenpath
-            )
-        except authlib.integrations.base_client.errors.OAuthError as oae:
-            st.write("Please recreate authorization token")
-            st.stop()
-    else:
-        raise Exception("Unable to create client")
-
 
 def make_todays_stats(
         con: st.container,
