@@ -1,21 +1,25 @@
+import yaml
+import streamlit as st
+
+import utils
+
+with open("dashboard_config.yaml", 'r') as dconf_fh:
+    dashconfig = yaml.load(dconf_fh, Loader=yaml.Loader)
+#print(dashconfig)
+st.set_page_config(layout=dashconfig['streamlit']['pagelayout'])
+
 import datetime
-import sys
 import json
 import argparse
 
 import authlib as authlib
 import schwab
 from schwab.client.base import BaseClient
-import yaml
-import streamlit as st
-from streamlit_autorefresh import st_autorefresh
 
 from account import AccountList
 from states import states
 import schwabdata
-from datastructures import Config
-
-
+from datastructures import Config, get_schwab_client
 
 ACCOUNT_FIELDS = BaseClient.Account.Fields
 
@@ -30,8 +34,7 @@ with open("dashboard_config.yaml", 'r') as dconf_fh:
 
 REFRESH_TIME_MS = 1000*dashconfig['streamlit']['refreshtimer']
 refresh_count = 0
-layout_set = False
-st.set_page_config(layout=dashconfig['streamlit']['pagelayout'])
+from streamlit_autorefresh import st_autorefresh
 st_autorefresh(interval=REFRESH_TIME_MS, limit=None, key="dashboard_referesh_timer")
 
 
