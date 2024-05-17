@@ -26,10 +26,6 @@ ACCOUNT_FIELDS = BaseClient.Account.Fields
 
 
 
-with open("dashboard_config.yaml", 'r') as dconf_fh:
-    dashconfig = yaml.load(dconf_fh, Loader=yaml.Loader)
-#print(dashconfig)
-
 ## Settings commands
 
 REFRESH_TIME_MS = 1000*dashconfig['streamlit']['refreshtimer']
