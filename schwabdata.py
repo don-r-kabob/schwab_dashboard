@@ -48,11 +48,18 @@ def _get_pos_df(client=None, conf=None):
         flatten_positions(position_data)
         pdf = pd.DataFrame(position_data)
         pdf['spotPrice'] = 0.0
-        symbols = pdf.loc[pdf['underlyingSymbol'].notnull(), 'underlyingSymbol'].unique()
+        try:
+            symbols = pdf.loc[pdf['underlyingSymbol'].notnull(), 'underlyingSymbol'].unique()
+        except KeyError as ke:
+            symbols = []
     except Exception as e:
         raise e
     try:
-        quotesj = client.get_quotes(symbols).json()
+        if len(symbols) > 0:
+            quotesj = client.get_quotes(symbols).json()
+        else:
+            quotesj = []
+        #st.json(quotesj)
         curr_price = {}
         for ticker in quotesj:
             tdata = quotesj[ticker]
@@ -85,10 +92,7 @@ def _get_pos_df(client=None, conf=None):
 
 def get_pos_df(client=None, conf=None):
     pdf = _get_pos_df(client=client, conf=conf)
-    subdf = pdf.loc[
-        (pdf['assetType']=="OPTION")
-        & (pdf['quantity'] < 0),
-        [
+    subdf_columns =         [
             'underlyingSymbol',
             "symbol",
             'description',
@@ -102,7 +106,10 @@ def get_pos_df(client=None, conf=None):
             'strikePrice',
             'ctype'
         ]
-    ].sort_values(['otm'])
+    subdf = pdf.loc[(pdf['assetType']=="OPTION") & (pdf['quantity'] < 0), :]
+    if len(subdf) == 0:
+        subdf = pd.DataFrame(columns=subdf_columns)
+    subdf = subdf[subdf_columns].sort_values(['otm'])
     return subdf
 
 
