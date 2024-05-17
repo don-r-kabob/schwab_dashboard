@@ -139,7 +139,7 @@ def get_order_count(
         order_res=None
 ):
     if order_res is None:
-        order_res = get_todys_orders(conf=conf)
+        order_res = get_todays_orders(conf=conf)
     return len(order_res)
 
 def get_order_option_premium(orders):
