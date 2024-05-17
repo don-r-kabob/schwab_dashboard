@@ -117,7 +117,12 @@ def make_todays_stats(
         initial_nlv = ib['liquidationValue']
         nlv_net = current_nlv - initial_nlv
         nlv_perc = nlv_net/initial_nlv
-        bp_available = cb['buyingPowerNonMarginableTrade']
+        try:
+            bp_available = cb['buyingPowerNonMarginableTrade']
+        except KeyError as ke:
+            bp_available = cb['cashAvailableForTrading']
+            #st.json(cb)
+            #st.stop()
         bp_perc = bp_available/current_nlv
         todays_percent = tp_display/initial_nlv
 
