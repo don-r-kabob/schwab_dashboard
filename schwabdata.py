@@ -6,11 +6,9 @@ import schwab
 from schwab.client.base import BaseClient
 import streamlit as st
 import pandas as pd
-from datastructures import Config
+from datastructures import Config, get_schwab_client
 
 from states import states
-import streamlit_dashboard
-
 
 ACCOUNT_FIELDS = BaseClient.Account.Fields
 
@@ -32,7 +30,7 @@ def _get_pos_df(client=None, conf=None):
                 conf = st.session_state[states.CONFIG]
             else:
                 return
-        client = streamlit_dashboard.get_schwab_client(conf=conf)
+        client = get_schwab_client(conf=conf)
     try:
         if states.POSITIONS_JSON not in st.session_state:
             pass
