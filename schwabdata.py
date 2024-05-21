@@ -174,3 +174,72 @@ def get_order_option_premium(orders):
             raise e
     #print(json.dumps(orders, indent=4))
     return net_premium
+
+def premium_today_df(client: schwab.client.Client, config: Config):
+    #print("Getting premium today df")
+    TODAY = datetime.today()
+    bod = datetime.combine(TODAY, time.min)
+    eod = datetime.combine(TODAY, time.max)
+    orders = client.get_orders_for_account(
+        st.session_state[states.ACTIVE_HASH],
+        to_entered_datetime=eod,
+        from_entered_datetime=bod
+    )
+    orders = json.loads(orders.text)
+    #print(json.dumps(orders, indent=4))
+    t = 0
+    l = []
+    for order in orders:
+        qd = {}
+        if order['status'] != "FILLED":
+            continue
+        t += 1
+        if t==1:
+            pass
+            #print(json.dumps(order, indent=4))
+        for olc in order['orderLegCollection']:
+            if olc['instrument']['assetType']=="EQUITY":
+                continue
+
+            legid = olc['legId']
+            qd[legid] = {}
+            try:
+                qd[legid]['contract'] = olc['instrument']['symbol']
+                qd[legid]['underlying'] = olc['instrument']['underlyingSymbol']
+            except KeyError as ke:
+                print(json.dumps(order, indent=4))
+                print(ke)
+                print(olc)
+                raise
+            qd['quantity'] = 0
+            quant = 1
+            instruct = olc['instruction']
+            if instruct == "SELL_TO_OPEN":
+                pass
+            elif instruct == "BUY_TO_OPEN":
+                quant = -1
+            elif instruct == "SELL_TO_CLOSE":
+                pass
+            elif instruct == "BUY_TO_CLOSE":
+                quant = -1
+            qd[legid]['qmod'] = quant
+
+        oac_count = 0
+        for oac in order['orderActivityCollection']:
+            if oac['executionType'] != "FILL":
+                continue
+            for leg in oac['executionLegs']:
+                oac_count += 1
+                try:
+                    d = copy.copy(qd[leg['legId']])
+                except KeyError as ke:
+                    continue
+                d['quantity'] = leg['quantity'] * d['qmod']
+                d['price'] = leg['price']
+                d['total'] = d['quantity'] * d['price']
+                if oac_count == 1 and t == 1:
+                    print(json.dumps(d, indent=4))
+                l.append(d)
+        #continue
+    df = pd.DataFrame(l)
+    return df
