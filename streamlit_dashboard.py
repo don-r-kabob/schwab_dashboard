@@ -1,34 +1,32 @@
-import yaml
-import streamlit as st
-
-import utils
-
-with open("dashboard_config.yaml", 'r') as dconf_fh:
-    dashconfig = yaml.load(dconf_fh, Loader=yaml.Loader)
-#print(dashconfig)
-st.set_page_config(layout=dashconfig['streamlit']['pagelayout'])
-
 import datetime
+import sys
 import json
 import argparse
 
-import authlib as authlib
 import schwab
 from schwab.client.base import BaseClient
+import yaml
+import streamlit as st
 
 from account import AccountList
 from states import states
 import schwabdata
-from datastructures import Config, get_schwab_client
+from datastructures import Config
+from stutils import get_schwab_client
 
 ACCOUNT_FIELDS = BaseClient.Account.Fields
 
 
 
 
+with open("dashboard_config.yaml", 'r') as dconf_fh:
+    dashconfig = yaml.load(dconf_fh, Loader=yaml.Loader)
+REFRESH_TIME_MS = 1000*dashconfig['streamlit']['refreshtimer']
+
+st.set_page_config(layout=dashconfig['streamlit']['pagelayout'])
+
 ## Settings commands
 
-REFRESH_TIME_MS = 1000*dashconfig['streamlit']['refreshtimer']
 refresh_count = 0
 from streamlit_autorefresh import st_autorefresh
 st_autorefresh(interval=REFRESH_TIME_MS, limit=None, key="dashboard_referesh_timer")
@@ -117,12 +115,7 @@ def make_todays_stats(
         initial_nlv = ib['liquidationValue']
         nlv_net = current_nlv - initial_nlv
         nlv_perc = nlv_net/initial_nlv
-        try:
-            bp_available = cb['buyingPowerNonMarginableTrade']
-        except KeyError as ke:
-            bp_available = cb['cashAvailableForTrading']
-            #st.json(cb)
-            #st.stop()
+        bp_available = cb['buyingPowerNonMarginableTrade']
         bp_perc = bp_available/current_nlv
         todays_percent = tp_display/initial_nlv
 
@@ -165,9 +158,6 @@ def __account_change(client=None, active_account=None):
         ).text
     )
     st.session_state[states.POSITIONS_JSON] = st.session_state[states.ACCOUNTS_JSON]['securitiesAccount']['positions']
-    #print(st.session_state[states.ACTIVE_ACCOUNT])
-    #st.json(st.session_state)
-    #print(st.session_state)
     return
 
 
@@ -241,13 +231,8 @@ def main(**argv):
     conf: Config = CONFIG
     #st.json(conf.__dict__)
     st.cache_data(ttl=dashconfig['streamlit']['refreshtimer'])
-    try:
-        client = get_schwab_client(conf)
-        accounts_json = client.get_account_numbers().json()
-    except authlib.integrations.base_client.errors.OAuthError as oae:
-        st.write("Please recreate authorization token")
-        st.stop()
-
+    client = schwab.auth.easy_client(conf.apikey, conf. apisecretkey, conf.callbackuri, conf.tokenpath)
+    accounts_json = client.get_account_numbers().json()
     alist = AccountList(jdata=accounts_json)
     st.session_state[states.ACCOUNT_LIST] = alist
     acc_json = None

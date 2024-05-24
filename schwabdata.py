@@ -6,7 +6,8 @@ import schwab
 from schwab.client.base import BaseClient
 import streamlit as st
 import pandas as pd
-from datastructures import Config, get_schwab_client
+from datastructures import Config
+from stutils import get_schwab_client
 
 from states import states
 

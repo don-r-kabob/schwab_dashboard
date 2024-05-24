@@ -4,6 +4,7 @@ import os
 import yaml
 
 import schwabdata
+import stutils
 from account import AccountList
 
 script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -25,7 +26,7 @@ with open("dashboard_config.yaml", 'r') as dconf_fh:
 if states.CONFIG in st.session_state:
     CONFIG = st.session_state[states.CONFIG]
 if states.ACCOUNT_LIST not in st.session_state:
-    client = sd.get_schwab_client(CONFIG)
+    client = stutils.get_schwab_client(CONFIG)
     accounts_json = client.get_account_numbers().json()
     alist = AccountList(jdata=accounts_json)
 
