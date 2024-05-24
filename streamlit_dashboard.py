@@ -194,10 +194,6 @@ def position_filtering(con: st.container):
             )
 
 
-
-
-
-
 def sidebar_account_select(
         alist: AccountList=None,
         default_account=None
@@ -225,8 +221,20 @@ def sidebar_account_select(
     return
 
 
-
-
+def make_premium_by_ticker(con:st.container):
+    client = get_schwab_client(st.session_state[states.CONFIG])
+    df = schwabdata.premium_today_df(client=client, config=None)
+    with con:
+        #st.dataframe(df)
+        st.header("Premium by ticker today")
+        if len(df) == 0:
+            st.write("None")
+            return
+        gbdf = df.groupby(['underlying']).sum()[['quantity', 'total']].reset_index().sort_values('total', ascending=False)
+        gbdf['total'] *= 100
+    # st.write(ticker_premium_df.columns)
+        st.dataframe(gbdf)
+    return
 
 
 def main(**argv):
@@ -268,6 +276,7 @@ def main(**argv):
 
 
     make_todays_stats(stats, client=client)
+    make_premium_by_ticker(premium_by_ticker)
     position_filtering(pos_filter_con)
 
 if __name__ == '__main__':
