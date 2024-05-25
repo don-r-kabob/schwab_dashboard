@@ -260,7 +260,7 @@ with data_con:
             if plot_by == "Expiration":
                 if plot_type == "Barplot":
                     datadf = get_outstanding_premium_by_expiration().sort_values("Expiration")
-                    st.dataframe(datadf)
+                    #st.dataframe(datadf)
                     if hue_set != "All":
                         datadf = datadf.loc[datadf['Measure']==hue_set,:]
                     if units == "Percent":
