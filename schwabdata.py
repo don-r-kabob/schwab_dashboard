@@ -24,6 +24,13 @@ def flatten_positions(pjson):
             pass
     return
 
+def get_account_nlv(account_json):
+    sa = account_json['securitiesAccount']
+    cb = sa['currentBalances']
+    nlv = cb['liquidationValue']
+    return nlv
+
+
 def _get_pos_df(client=None, conf=None):
     if client is None:
         if conf is None:

@@ -241,6 +241,14 @@ with plot_control_con:
                 ),
                 index=0
             )
+        units = st.selectbox(
+            "op_units",
+            (
+                "Percent",
+                "Dollars"
+            ),
+            index=0
+        )
 ## End select box expander
 
 data_con = st.container()
@@ -252,8 +260,12 @@ with data_con:
             if plot_by == "Expiration":
                 if plot_type == "Barplot":
                     datadf = get_outstanding_premium_by_expiration().sort_values("Expiration")
+                    st.dataframe(datadf)
                     if hue_set != "All":
                         datadf = datadf.loc[datadf['Measure']==hue_set,:]
+                    if units == "Percent":
+                        nlv = schwabdata.get_account_nlv(st.session_state[states.ACCOUNTS_JSON])
+                        datadf['Value'] = round(datadf['Value']/float(nlv)*100, ndigits=2)
                     fig, ax = plt.subplots()
                     sns.barplot(ax=ax, data=datadf, x="Value", y="Expiration", hue="Measure")
                     ax.set_title("Outstanding Premium barplot by expiration")
