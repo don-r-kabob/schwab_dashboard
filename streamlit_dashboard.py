@@ -11,12 +11,15 @@ import streamlit as st
 from account import AccountList
 from states import states
 import schwabdata
+import logging
 from datastructures import Config
 from stutils import get_schwab_client
 
 ACCOUNT_FIELDS = BaseClient.Account.Fields
 
-
+LOG_LEVEL = logging.DEBUG
+#logging.basicConfig(level=LOG_LEVEL)
+#print(LOG_LEVEL)
 
 
 with open("dashboard_config.yaml", 'r') as dconf_fh:

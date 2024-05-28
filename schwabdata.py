@@ -1,5 +1,6 @@
 import copy
 import json
+import logging
 from datetime import datetime, time, date
 
 import schwab
@@ -265,7 +266,8 @@ def premium_today_df(client: schwab.client.Client, config: Config):
                 d['price'] = leg['price']
                 d['total'] = d['quantity'] * d['price']
                 if oac_count == 1 and t == 1:
-                    print(json.dumps(d, indent=4))
+                    pass
+                    #logging.debug(json.dumps(d, indent=4))
                 l.append(d)
         #continue
     df = pd.DataFrame(l)
