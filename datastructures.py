@@ -2,6 +2,7 @@
 
 import json
 
+
 class Config(object):
     def __init__(self):
         self.apikey = None
@@ -11,7 +12,7 @@ class Config(object):
         self.defaultAccount = None
 
     def read_config(self, config_file):
-        print("Reading config")
+        #print("Reading config")
         fh = open(config_file, 'r')
         c = json.load(fh)
         fh.close()
@@ -27,3 +28,5 @@ class Config(object):
 
     def __str__(self):
         return json.dumps(self.__dict__, indent=4)
+
+

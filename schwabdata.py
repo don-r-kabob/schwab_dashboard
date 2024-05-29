@@ -1,5 +1,6 @@
 import copy
 import json
+import logging
 from datetime import datetime, time, date
 
 import schwab
@@ -7,10 +8,9 @@ from schwab.client.base import BaseClient
 import streamlit as st
 import pandas as pd
 from datastructures import Config
+from stutils import get_schwab_client
 
 from states import states
-import streamlit_dashboard
-
 
 ACCOUNT_FIELDS = BaseClient.Account.Fields
 
@@ -25,26 +25,48 @@ def flatten_positions(pjson):
             pass
     return
 
-def get_pos_df(client=None, conf=None):
+def get_account_nlv(account_json):
+    sa = account_json['securitiesAccount']
+    cb = sa['currentBalances']
+    nlv = cb['liquidationValue']
+    return nlv
+
+
+def _get_pos_df(client=None, conf=None):
     if client is None:
         if conf is None:
             if states.CONFIG in st.session_state:
                 conf = st.session_state[states.CONFIG]
             else:
                 return
-        client = streamlit_dashboard.get_schwab_client(conf=conf)
+        client = get_schwab_client(conf=conf)
     try:
         if states.POSITIONS_JSON not in st.session_state:
             pass
-        position_data = copy.deepcopy(st.session_state[states.POSITIONS_JSON])
+        if states.POSITIONS_JSON in st.session_state:
+            position_data = copy.deepcopy(st.session_state[states.POSITIONS_JSON])
+        else:
+            if states.ACCOUNTS_JSON not in st.session_state:
+                acc_json = client.get_account(account_hash=st.session_state[states.ACTIVE_HASH],
+                                              fields=[ACCOUNT_FIELDS.POSITIONS]).json()
+                st.session_state[states.ACCOUNTS_JSON] = acc_json
+                position_data = acc_json['securitiesAccount']['positions']
+
         flatten_positions(position_data)
         pdf = pd.DataFrame(position_data)
         pdf['spotPrice'] = 0.0
-        symbols = pdf.loc[pdf['underlyingSymbol'].notnull(), 'underlyingSymbol'].unique()
+        try:
+            symbols = pdf.loc[pdf['underlyingSymbol'].notnull(), 'underlyingSymbol'].unique()
+        except KeyError as ke:
+            symbols = []
     except Exception as e:
         raise e
     try:
-        quotesj = client.get_quotes(symbols).json()
+        if len(symbols) > 0:
+            quotesj = client.get_quotes(symbols).json()
+        else:
+            quotesj = []
+        #st.json(quotesj)
         curr_price = {}
         for ticker in quotesj:
             tdata = quotesj[ticker]
@@ -72,10 +94,12 @@ def get_pos_df(client=None, conf=None):
     pdf['otm'] = abs((pdf['strikePrice']/pdf['spotPrice'])-1)
     pdf.loc[(pdf['ctype']=="C") & (pdf['strikePrice'] < pdf['spotPrice']), 'otm'] *= -1
     pdf.loc[(pdf['ctype']=="P") & (pdf['strikePrice'] > pdf['spotPrice']), 'otm'] *= -1
-    subdf = pdf.loc[
-        (pdf['assetType']=="OPTION")
-        & (pdf['quantity'] < 0),
-        [
+    #st.dataframe(pdf)
+    return pdf
+
+def get_pos_df(client=None, conf=None):
+    pdf = _get_pos_df(client=client, conf=conf)
+    subdf_columns =         [
             'underlyingSymbol',
             "symbol",
             'description',
@@ -89,7 +113,10 @@ def get_pos_df(client=None, conf=None):
             'strikePrice',
             'ctype'
         ]
-    ].sort_values(['otm'])
+    subdf = pdf.loc[(pdf['assetType']=="OPTION") & (pdf['quantity'] < 0), :]
+    if len(subdf) == 0:
+        subdf = pd.DataFrame(columns=subdf_columns)
+    subdf = subdf[subdf_columns].sort_values(['otm'])
     return subdf
 
 
@@ -108,7 +135,7 @@ def get_todays_orders(
         conf: Config = None,
         client = None
 ):
-    print("Getting today's orders")
+    #print("Getting today's orders")
     if client is None:
         client = schwab.auth.easy_client(conf.apikey, conf.apisecretkey, conf.callbackuri, conf.tokenpath)
     bod = datetime.today().replace(hour=0, minute=0, second=0)
@@ -121,7 +148,7 @@ def get_order_count(
         order_res=None
 ):
     if order_res is None:
-        order_res = get_todys_orders(conf=conf)
+        order_res = get_todays_orders(conf=conf)
     return len(order_res)
 
 def get_order_option_premium(orders):
@@ -239,7 +266,8 @@ def premium_today_df(client: schwab.client.Client, config: Config):
                 d['price'] = leg['price']
                 d['total'] = d['quantity'] * d['price']
                 if oac_count == 1 and t == 1:
-                    print(json.dumps(d, indent=4))
+                    pass
+                    #logging.debug(json.dumps(d, indent=4))
                 l.append(d)
         #continue
     df = pd.DataFrame(l)

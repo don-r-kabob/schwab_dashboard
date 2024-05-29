@@ -1,3 +1,6 @@
 [runner]
 
 fastReruns = false
+
+[server]
+fileWatcherType = "poll"
