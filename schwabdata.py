@@ -272,3 +272,41 @@ def premium_today_df(client: schwab.client.Client, config: Config):
         #continue
     df = pd.DataFrame(l)
     return df
+
+def sut_test(pjson, sutmax=-1):
+    res = []
+    unweighed_calc = {
+        'CALL_COUNT': 0,
+        'CALL_REMAINING': sutmax,
+        'CALL_PCT_USED': 0,
+        'PUT_COUNT': 0,
+        'PUT_REMAINING': sutmax,
+        'PUT_PCT_USED': 0,
+        "type": "unweighted"
+    }
+    #print(json.dumps(unweighed_calc, indent=4))
+    for pos in pjson:
+        p_ins = pos['instrument']
+        if p_ins['assetType'] != "OPTION":
+            continue
+        try:
+            otype = pos['instrument']['putCall']
+            count_type = otype  + "_COUNT"
+            remaining_type =  otype + "_REMAINING"
+        except KeyError as ke:
+            print(json.dumps(pos, indent=4))
+            print(ke)
+            raise ke
+        unweighed_calc[count_type] -= pos['shortQuantity']
+        unweighed_calc[count_type] += pos['longQuantity']
+        unweighed_calc[remaining_type] -= pos['shortQuantity']
+        unweighed_calc[remaining_type] += pos['longQuantity']
+    #print(unweighed_calc)
+    if unweighed_calc["CALL_REMAINING"] > sutmax:
+        unweighed_calc["CALL_REMAINING"] = sutmax
+    if unweighed_calc["PUT_REMAINING"] > sutmax:
+        unweighed_calc["PUT_REMAINING"] = sutmax
+    unweighed_calc["CALL_PCT_USED"] = -1*round((unweighed_calc['CALL_COUNT']/sutmax)*100, 2)
+    unweighed_calc["PUT_PCT_USED"] = -1*round((unweighed_calc['PUT_COUNT']/sutmax)*100, 2)
+    res.append(unweighed_calc)
+    return res

@@ -1,8 +1,10 @@
 import datetime
+import math
 import sys
 import json
 import argparse
 
+import pandas as pd
 import schwab
 from schwab.client.base import BaseClient
 import yaml
@@ -229,6 +231,48 @@ def make_premium_by_ticker(con:st.container):
         st.dataframe(gbdf)
     return
 
+def sut_container(con: st.container):
+    client = get_schwab_client(st.session_state[states.CONFIG])
+    with con:
+        st.header("SUT - Short Unit Test")
+        nlv = schwabdata.get_account_nlv(st.session_state[states.ACCOUNTS_JSON])
+        sutmax = math.floor(nlv * 5 /1000)
+        posj = st.session_state[states.POSITIONS_JSON]
+        sutdata = schwabdata.sut_test(posj, sutmax)
+        sdf = pd.DataFrame(sutdata, index=[0])
+        sdf.index = sdf['type'].astype(str)
+        methods = sdf['type'].unique()
+        sdf = sdf.drop(columns=['type'])
+        method = st.selectbox("SUT_method", methods)
+        #st.dataframe(sdf)
+        #st.write("SUT Max: {}".format(sutmax))
+
+        sut_col1, sut_col2 = st.columns(2)
+                #print(idx)
+                #print(sdf.loc[idx,:])
+        mdf = sdf.loc[method,:]
+        calls = [
+            #["SUT Max", fb.ACCOUNT_DATA['Max_Short_Units']],
+            ["Unit Count", int(mdf['CALL_COUNT'])],
+            ["SUT Max", sutmax],
+            ["Units remaining", int(mdf['CALL_REMAINING'])],
+            ["Call Percent Used", (int(mdf['CALL_PCT_USED']))]
+            #["Call Percent Used", "{}%%".format(int(mdf['CALL_PCT_USED']))]
+        ]
+        puts = [
+            ["Put Count", int(mdf['PUT_COUNT'])],
+            ["SUT Max", sutmax],
+            ["Puts remaining", int(mdf['PUT_REMAINING'])],
+            ["Put Percent Used", int(mdf['PUT_PCT_USED'])]
+        ]
+        #sut_col1.write(method)
+        sut_col1.subheader("Call SUT")
+        sut_col1.table(calls)
+        sut_col2.subheader("Put SUT")
+        sut_col2.table(puts)
+        #sut_col2.table(sdf.loc[method,:].T)
+
+
 
 def main(**argv):
     conf: Config = CONFIG
@@ -265,6 +309,7 @@ def main(**argv):
 
     make_todays_stats(stats, client=client)
     make_premium_by_ticker(premium_by_ticker)
+    sut_container(sut_test_con)
     position_filtering(pos_filter_con)
 
 if __name__ == '__main__':
