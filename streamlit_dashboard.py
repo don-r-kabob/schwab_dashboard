@@ -27,6 +27,7 @@ LOG_LEVEL = logging.DEBUG
 with open("dashboard_config.yaml", 'r') as dconf_fh:
     dashconfig = yaml.load(dconf_fh, Loader=yaml.Loader)
 REFRESH_TIME_MS = 1000*dashconfig['streamlit']['refreshtimer']
+LAYOUT = dashconfig['streamlit']['layout']
 
 st.set_page_config(layout=dashconfig['streamlit']['pagelayout'])
 
@@ -231,47 +232,48 @@ def make_premium_by_ticker(con:st.container):
         st.dataframe(gbdf)
     return
 
-def sut_container(con: st.container):
+def sut_container(con: st.container=None, put_con: st.container=None, call_con: st.container=None):
     client = get_schwab_client(st.session_state[states.CONFIG])
-    with con:
-        st.header("SUT - Short Unit Test")
-        nlv = schwabdata.get_account_nlv(st.session_state[states.ACCOUNTS_JSON])
-        sutmax = math.floor(nlv * 5 /1000)
-        posj = st.session_state[states.POSITIONS_JSON]
-        sutdata = schwabdata.sut_test(posj, sutmax)
-        sdf = pd.DataFrame(sutdata, index=[0])
-        sdf.index = sdf['type'].astype(str)
-        methods = sdf['type'].unique()
-        sdf = sdf.drop(columns=['type'])
-        method = st.selectbox("SUT_method", methods)
-        #st.dataframe(sdf)
-        #st.write("SUT Max: {}".format(sutmax))
-
-        sut_col1, sut_col2 = st.columns(2)
-                #print(idx)
-                #print(sdf.loc[idx,:])
-        mdf = sdf.loc[method,:]
-        calls = [
-            #["SUT Max", fb.ACCOUNT_DATA['Max_Short_Units']],
-            ["Unit Count", int(mdf['CALL_COUNT'])],
-            ["SUT Max", sutmax],
-            ["Units remaining", int(mdf['CALL_REMAINING'])],
-            ["Call Percent Used", (int(mdf['CALL_PCT_USED']))]
-            #["Call Percent Used", "{}%%".format(int(mdf['CALL_PCT_USED']))]
-        ]
+    if put_con is None and call_con is None:
+        if con is None:
+            raise Exception("No Sut Container(s)")
+        with con:
+            st.header("SUT - Short Unit Test")
+            (call_con, put_con) = st.columns(2)
+    #st.header("SUT - Short Unit Test")
+    nlv = schwabdata.get_account_nlv(st.session_state[states.ACCOUNTS_JSON])
+    sutmax = math.floor(nlv * 5 /1000)
+    posj = st.session_state[states.POSITIONS_JSON]
+    sutdata = schwabdata.sut_test(posj, sutmax)
+    sdf = pd.DataFrame(sutdata, index=[0])
+    sdf.index = sdf['type'].astype(str)
+    methods = sdf['type'].unique()
+    sdf = sdf.drop(columns=['type'])
+    with put_con:
+        put_method = st.selectbox("SUT_put_method", methods)
+        mdf = sdf.loc[put_method,:]
         puts = [
             ["Put Count", int(mdf['PUT_COUNT'])],
             ["SUT Max", sutmax],
             ["Puts remaining", int(mdf['PUT_REMAINING'])],
             ["Put Percent Used", int(mdf['PUT_PCT_USED'])]
         ]
-        #sut_col1.write(method)
-        sut_col1.subheader("Call SUT")
-        sut_col1.table(calls)
-        sut_col2.subheader("Put SUT")
-        sut_col2.table(puts)
-        #sut_col2.table(sdf.loc[method,:].T)
-
+        put_con.subheader("Put SUT")
+        put_con.table(puts)
+    with call_con:
+        call_method = st.selectbox("SUT_call_method", methods)
+        mdf = sdf.loc[call_method, :]
+        calls = [
+            # ["SUT Max", fb.ACCOUNT_DATA['Max_Short_Units']],
+            ["Unit Count", int(mdf['CALL_COUNT'])],
+            ["SUT Max", sutmax],
+            ["Units remaining", int(mdf['CALL_REMAINING'])],
+            ["Call Percent Used", (int(mdf['CALL_PCT_USED']))]
+            # ["Call Percent Used", "{}%%".format(int(mdf['CALL_PCT_USED']))]
+        ]
+        # sut_col1.write(method)
+        call_con.subheader("Call SUT")
+        call_con.table(calls)
 
 
 def main(**argv):
@@ -300,17 +302,31 @@ def main(**argv):
 
     st.header("Schwab Position Tracker")
     st.write(f"Update time: {datetime.datetime.now()}")
+    layout = "131"
+    print(type(LAYOUT))
+    if LAYOUT=="default" or LAYOUT==1111:
+        stats = st.expander("Today's Stats", expanded=True)
+        sut_test_con = st.expander("SUT test", expanded=True)
+        premium_by_ticker = st.expander("Premium By Ticker", expanded=True)
+        pos_filter_con = st.expander("RED ALERT - position review", expanded=True)
+        make_todays_stats(stats, client=client)
+        make_premium_by_ticker(premium_by_ticker)
+        sut_container(sut_test_con)
+        position_filtering(pos_filter_con)
+    elif LAYOUT == 131:
+        stats = st.expander("Today's Stats", expanded=True)
+        datacon = st.expander("Data", expanded=True)
+        pos_filter_con = st.expander("RED ALERT - position review", expanded=True)
+        make_todays_stats(stats)
+        with datacon:
+            call_sut_con, put_sut_con, ticker_prem_con = st.columns(3)
+        sut_container(put_con=put_sut_con, call_con=call_sut_con)
+        make_premium_by_ticker(ticker_prem_con)
+        position_filtering(pos_filter_con)
 
-    stats = st.expander("Today's Stats", expanded=True)
-    sut_test_con = st.expander("SUT test", expanded=True)
-    premium_by_ticker = st.expander("Premium By Ticker", expanded=True)
-    pos_filter_con = st.expander("RED ALERT - position review", expanded=True)
 
 
-    make_todays_stats(stats, client=client)
-    make_premium_by_ticker(premium_by_ticker)
-    sut_container(sut_test_con)
-    position_filtering(pos_filter_con)
+
 
 if __name__ == '__main__':
     CONFIG = Config()
