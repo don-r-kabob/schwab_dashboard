@@ -17,6 +17,8 @@ Getting a token:
 python3 utils/get_refresh_token.py
 ```
 
+Recommened App Callback: https://127.0.0.1/
+
 This will prompt you for:
 
 1. App key
