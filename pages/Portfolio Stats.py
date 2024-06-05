@@ -266,9 +266,12 @@ with data_con:
                     if units == "Percent":
                         nlv = schwabdata.get_account_nlv(st.session_state[states.ACCOUNTS_JSON])
                         datadf['Value'] = round(datadf['Value']/float(nlv)*100, ndigits=2)
+
+                    exp_filter = st.multiselect("Expirations Filter", datadf['Expiration'].unique())
+                    datadf = datadf.loc[~datadf['Expiration'].isin(exp_filter), :]
                     fig, ax = plt.subplots()
                     sns.barplot(ax=ax, data=datadf, x="Value", y="Expiration", hue="Measure")
-                    ax.set_title("Outstanding Premium barplot by expiration")
+                    ax.set_title(f"Outstanding Premium in {units} by {plot_by}")
                     for container in ax.containers:
                         ax.bar_label(container)
                     fig.tight_layout()
