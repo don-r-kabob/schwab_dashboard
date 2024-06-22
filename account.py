@@ -16,9 +16,12 @@ class Account():
             d[k] = getattr(self, k)
         return d
 
-    def from_json(self,j):
+    def from_json(self, j):
         for k in j:
-            setattr(self, k, j[k])
+            try:
+                setattr(self, k, j[k])
+            except TypeError as te:
+                setattr(self, k, j[int(k)])
 
 class AccountList (object):
     def __init__(self, jdata=None, **kwargs):
