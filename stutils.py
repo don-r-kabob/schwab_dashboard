@@ -35,11 +35,11 @@ def get_schwab_client(conf: Config = None):
     if c is not None:
         #sys.stderr.write(json.dumps(c.__dict__, indent=4))
         try:
-            client = schwab.auth.easy_client(
-                c.apikey,
-                c.apisecretkey,
-                c.callbackuri,
-                c.tokenpath
+            client = schwab.auth.client_from_token_file(
+                conf.tokenpath,
+                api_key=conf.apikey,
+                app_secret=conf.apisecretkey,
+                asyncio=False
             )
         except authlib.integrations.base_client.errors.OAuthError as oae:
             st.write("Please recreate authorization token")

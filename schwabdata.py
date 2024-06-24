@@ -123,7 +123,7 @@ def get_pos_df(client=None, conf=None):
 
 
 def get_positions_json(config: Config):
-    client = schwab.auth.easy_client(config.apikey, config.apisecretkey, config.callbackuri, config.tokenpath)
+    client = get_schwab_client(config)
     acc_json = client.get_account(config.accountnum, fields=[ACCOUNT_FIELDS.POSITIONS]).json()
     accdata = acc_json['securitiesAccount']
     positions = accdata['positions']
@@ -137,7 +137,7 @@ def get_todays_orders(
 ):
     #print("Getting today's orders")
     if client is None:
-        client = schwab.auth.easy_client(conf.apikey, conf.apisecretkey, conf.callbackuri, conf.tokenpath)
+        client = get_schwab_client()
     bod = datetime.today().replace(hour=0, minute=0, second=0)
     eod = datetime.today().replace(hour=23, minute=59, second=59)
     order_res = client.get_orders_for_account(account_hash=ahash, from_entered_datetime=bod, to_entered_datetime=eod)

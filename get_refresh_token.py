@@ -4,6 +4,7 @@ import argparse
 import schwab
 import yaml
 
+import stutils
 from datastructures import Config
 
 def setup(conf: Config, tokenpath, cfile):
@@ -48,7 +49,7 @@ if __name__ == '__main__':
     if args['noauth'] is False:
         client = setup_client(c)
     else:
-        client = schwab.auth.easy_client(c.apikey, c.apisecretkey, c.callbackuri, c.tokenpath)
+        client = stutils.get_schwab_client(c)
     res = client.get_account_numbers()
     print(res.json())
     sys.exit(0)

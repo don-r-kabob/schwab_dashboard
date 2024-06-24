@@ -280,7 +280,7 @@ def main(**argv):
     conf: Config = CONFIG
     #st.json(conf.__dict__)
     st.cache_data(ttl=dashconfig['streamlit']['refreshtimer'])
-    client = schwab.auth.easy_client(conf.apikey, conf. apisecretkey, conf.callbackuri, conf.tokenpath)
+    client = get_schwab_client(conf)
     accounts_json = client.get_account_numbers().json()
     alist = AccountList(jdata=accounts_json)
     st.session_state[states.ACCOUNT_LIST] = alist
