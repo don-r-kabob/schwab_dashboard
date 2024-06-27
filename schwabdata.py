@@ -54,6 +54,7 @@ def _get_pos_df(client=None, conf=None):
 
         flatten_positions(position_data)
         pdf = pd.DataFrame(position_data)
+        #print(pdf.columns)
         pdf['spotPrice'] = 0.0
         try:
             symbols = pdf.loc[pdf['underlyingSymbol'].notnull(), 'underlyingSymbol'].unique()
