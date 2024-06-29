@@ -9,3 +9,14 @@ schwab:
 
 app:
   version: 0.1.5
+  aws: true
+  gcp: false
+
+useaws: true
+usegcp: false
+
+aws:
+  s3bucket: name
+  dynamodb:
+    table: schwab_api_auth_token
+    primary_key: authtoken
