@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 /schwab.app_config.json
 /schwab.token_file.json
+/dashboard_config.yaml
