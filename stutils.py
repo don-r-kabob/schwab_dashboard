@@ -2,9 +2,30 @@ import json
 
 import schwab
 import streamlit as st
+import yaml
 
+import shutils
 from datastructures import Config
 from states import states
+
+@st.cache_data
+def get_cache_config(config_file):
+    c = Config()
+    c.read_config(config_file)
+    return c
+
+@st.cache_data
+def get_cache_appconfig(appconfig_file):
+    with open(appconfig_file, 'r') as ac_fh:
+        APP_CONFIG = yaml.safe_load(ac_fh)
+    return APP_CONFIG
+
+def __get_schwab_cache_client(appconfig: dict=None, schwab_config: Config=None) -> schwab.client.Client:
+    return __get_schwab_cache_client(appconfig=appconfig, _schwab_config=schwab_config)
+
+@st.cache_resource(ttl=300)
+def get_schwab_cache_client(appconfig: dict=None, _schwab_config: Config=None) -> schwab.client.Client:
+    return shutils.get_schwab_client(appconfig=appconfig, schwab_config=_schwab_config)
 
 
 def config_from_file(configFile=None):
