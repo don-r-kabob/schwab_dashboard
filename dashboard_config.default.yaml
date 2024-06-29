@@ -8,15 +8,11 @@ schwab:
   tokenfile: schwab.token_file.json
 
 app:
-  version: 0.1.5
-  aws: true
+  version: 2.0.0
+  aws: false
   gcp: false
 
-useaws: true
-usegcp: false
-
 aws:
-  s3bucket: name
   dynamodb:
-    table: schwab_api_auth_token
-    primary_key: authtoken
+    table:
+    primary_key:
