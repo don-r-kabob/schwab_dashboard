@@ -161,3 +161,6 @@ cython_debug/
 /schwab.app_config.json
 /schwab.token_file.json
 /dashboard_config.yaml
+/cert.pem
+/key.pem
+old/*
