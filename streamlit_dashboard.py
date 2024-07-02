@@ -1,5 +1,7 @@
 import datetime
 import math
+import os
+import shutil
 import sys
 import json
 import argparse
@@ -10,6 +12,8 @@ from schwab.client.base import BaseClient
 import yaml
 import streamlit as st
 
+import shutils
+import stutils
 from account import AccountList
 from states import states
 import schwabdata
@@ -23,9 +27,22 @@ LOG_LEVEL = logging.DEBUG
 #logging.basicConfig(level=LOG_LEVEL)
 #print(LOG_LEVEL)
 
+def read_yaml_file(file_path):
+    if not os.path.exists(file_path):
+        shutil.copy2("dashboard_config.default.yaml", "dashboard_config.yaml")
+    try:
+        with open(file_path, 'r') as file:
+            data = yaml.safe_load(file)
+            return data
+    except Exception as e:
+        print(f"Error reading YAML file: {e}")
+        return None
 
-with open("dashboard_config.yaml", 'r') as dconf_fh:
-    dashconfig = yaml.load(dconf_fh, Loader=yaml.Loader)
+
+
+#with open("dashboard_config.yaml", 'r') as dconf_fh:
+ #   dashconfig = yaml.load(dconf_fh, Loader=yaml.Loader)
+dashconfig = read_yaml_file("dashboard_config.yaml")
 REFRESH_TIME_MS = 1000*dashconfig['streamlit']['refreshtimer']
 LAYOUT = dashconfig['streamlit']['layout']
 
@@ -132,12 +149,13 @@ def make_todays_stats(
             #order_counts = schwabdata.get_order_count(client, conf)
         col_1, col_2, col3 = st.columns(3)
         col_1.write("Listed Equity NLV:")
-        col_2.write(f"{current_nlv}")
-        #col3.write(f"{(nlv_perc*100:.2f}%")
-        col3.write("(Disabled)")
+        col3.write(f"{current_nlv}")
+        nlv_disp = nlv_perc*100
+        col_2.write(f"{nlv_disp:.2f}%")
+        #col3.write("(Disabled)")
         col_1.write("Today's Premium:")
-        col_2.write(f"{tp_display}")
-        col3.write(f"{(todays_percent*100):.2f}%")
+        col3    .write(f"{tp_display}")
+        col_2.write(f"{(todays_percent*100):.2f}%")
         #col_2.write("\t{} ({}%)".format(todays_premium, todays_pct))
         #col1.write("Today's Orders:")
         #col_2.write("\t{}".format(order_counts))
@@ -156,7 +174,8 @@ def __account_change(client=None, active_account=None):
         states.ACCOUNT_LIST: alist,
         states.ACTIVE_HASH: alist.get_hash(active_account)
     }
-    client = get_schwab_client(conf)
+    #client = get_schwab_client(conf)
+    client = stutils.get_schwab_client(conf)
     st.session_state[states.ACCOUNTS_JSON] = json.loads(
         client.get_account(
             alist.get_hash(active_account),
@@ -218,8 +237,10 @@ def sidebar_account_select(
 
 
 def make_premium_by_ticker(con:st.container):
-    client = get_schwab_client(st.session_state[states.CONFIG])
-    df = schwabdata.premium_today_df(client=client, config=None)
+    schwab_config = st.session_state[states.CONFIG]
+    client = stutils.get_schwab_client(schwab_config)
+    #client = get_schwab_client(st.session_state[states.CONFIG])
+    df = schwabdata.premium_today_df(client=client, config=schwab_config)
     with con:
         #st.dataframe(df)
         st.header("Premium by ticker today")
@@ -233,7 +254,9 @@ def make_premium_by_ticker(con:st.container):
     return
 
 def sut_container(con: st.container=None, put_con: st.container=None, call_con: st.container=None):
-    client = get_schwab_client(st.session_state[states.CONFIG])
+    schwab_config = st.session_state[states.CONFIG]
+    client = stutils.get_schwab_client(schwab_config)
+    #client = get_schwab_client(st.session_state[states.CONFIG])
     if put_con is None and call_con is None:
         if con is None:
             raise Exception("No Sut Container(s)")
@@ -278,9 +301,14 @@ def sut_container(con: st.container=None, put_con: st.container=None, call_con: 
 
 def main(**argv):
     conf: Config = CONFIG
+    appconf = APP_CONFIG
     #st.json(conf.__dict__)
     st.cache_data(ttl=dashconfig['streamlit']['refreshtimer'])
-    client = get_schwab_client(conf)
+    #client = get_schwab_client(conf)
+    client = stutils.get_schwab_cache_client(appconfig=appconf, _schwab_config=conf)
+    if client is None:
+        raise Exception("Unable to create schwab client in main")
+
     accounts_json = client.get_account_numbers().json()
     alist = AccountList(jdata=accounts_json)
     st.session_state[states.ACCOUNT_LIST] = alist
@@ -340,9 +368,8 @@ if __name__ == '__main__':
     # Currently not implemented and is hard coded to be true
     ap.add_argument("--update", default=False, action="store_true")
     args = vars(ap.parse_args())
-    with open(args['appconfig'], 'r') as ac_fh:
-        APP_CONFIG = yaml.safe_load(ac_fh)
-    CONFIG.read_config(APP_CONFIG['schwab']['configfile'])
+    APP_CONFIG = stutils.get_cache_appconfig(args['appconfig'])
+    CONFIG = stutils.get_cache_config(APP_CONFIG['schwab']['configfile'])
     st.session_state[states.CONFIG_FILE] = APP_CONFIG['schwab']['configfile']
     st.session_state[states.TOKEN_FILE] = APP_CONFIG['schwab']['tokenfile']
     st.session_state[states.CONFIG] = CONFIG
