@@ -331,7 +331,7 @@ def main(**argv):
     st.header("Schwab Position Tracker")
     st.write(f"Update time: {datetime.datetime.now()}")
     layout = "131"
-    print(type(LAYOUT))
+    #print(type(LAYOUT))
     if LAYOUT=="default" or LAYOUT==1111:
         stats = st.expander("Today's Stats", expanded=True)
         sut_test_con = st.expander("SUT test", expanded=True)
