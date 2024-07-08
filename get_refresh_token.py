@@ -7,8 +7,6 @@ import argparse
 import schwab
 import yaml
 
-import amazon
-import stutils
 from datastructures import Config
 
 def read_json_file(file_path):
@@ -45,6 +43,7 @@ def setup_client(conf: Config):
     return client
 
 def __write_to_amazon(appconfig: dict, conf: Config):
+    import amazon
     if appconfig.get('app', None).get('aws'):
         try:
             token = conf.tokenpath
@@ -87,6 +86,7 @@ def main(
             try:
                 token = conf.tokenpath
                 if token:
+                    import amazon
                     amazon.write_token_to_dynamodb(appconfig)
                     logging.info("Token saved to AWS")
                 else:

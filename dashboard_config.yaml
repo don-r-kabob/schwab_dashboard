@@ -1,0 +1,18 @@
+
+streamlit:
+  refreshtimer: 300
+  pagelayout: wide
+  layout: default #valid options: default; 131;
+schwab:
+  configfile: schwab.app_config.json
+  tokenfile: schwab.token_file.json
+
+app:
+  version: 2.0.0
+  aws: false
+  gcp: false
+
+aws:
+  dynamodb:
+    table:
+    primary_key:
