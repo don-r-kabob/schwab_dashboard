@@ -1,24 +1,19 @@
 import datetime
 import math
-import os
-import shutil
-import sys
 import json
 import argparse
 
 import pandas as pd
 import schwab
 from schwab.client.base import BaseClient
-import yaml
 import streamlit as st
 
-import shutils
 import stutils
 from account import AccountList
 from states import states
 import schwabdata
 import logging
-from datastructures import Config
+from datastructures import Config, read_yaml_file
 from stutils import get_schwab_client
 
 ACCOUNT_FIELDS = BaseClient.Account.Fields
@@ -26,18 +21,6 @@ ACCOUNT_FIELDS = BaseClient.Account.Fields
 LOG_LEVEL = logging.DEBUG
 #logging.basicConfig(level=LOG_LEVEL)
 #print(LOG_LEVEL)
-
-def read_yaml_file(file_path):
-    if not os.path.exists(file_path):
-        shutil.copy2("dashboard_config.default.yaml", "dashboard_config.yaml")
-    try:
-        with open(file_path, 'r') as file:
-            data = yaml.safe_load(file)
-            return data
-    except Exception as e:
-        print(f"Error reading YAML file: {e}")
-        return None
-
 
 
 #with open("dashboard_config.yaml", 'r') as dconf_fh:
@@ -309,7 +292,14 @@ def main(**argv):
     if client is None:
         raise Exception("Unable to create schwab client in main")
 
-    accounts_json = client.get_account_numbers().json()
+    try:
+        accounts_json = client.get_account_numbers().json()
+    except Exception as e:
+        try:
+            client = stutils.get_schwab_cache_client(appconfig=appconf, _schwab_config=conf)
+            accounts_json = client.get_account_numbers().json()
+        except Exception as e:
+            raise e
     alist = AccountList(jdata=accounts_json)
     st.session_state[states.ACCOUNT_LIST] = alist
     acc_json = None
