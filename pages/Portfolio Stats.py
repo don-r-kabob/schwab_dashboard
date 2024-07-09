@@ -267,7 +267,16 @@ with data_con:
             if plot_by == "Expiration":
                 if plot_type == "Barplot":
                     datadf = get_outstanding_premium_by_expiration().sort_values("Expiration")
+                    expirations_list = datadf['Expiration'].unique()
                     #st.dataframe(datadf)
+                    exp_filter = st.multiselect(
+                        label="Expiration Filter",
+                        options=expirations_list
+                    )
+                    datadf = datadf.loc[
+                        ~(datadf['Expiration'].isin(exp_filter)),
+                        :
+                    ]
                     if hue_set != "All":
                         datadf = datadf.loc[datadf['Measure']==hue_set,:]
                     if units == "Percent":
