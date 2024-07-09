@@ -229,6 +229,8 @@ def premium_today_df(client: schwab.client.Client, config: Config):
         for olc in order['orderLegCollection']:
             if olc['instrument']['assetType']=="EQUITY":
                 continue
+            elif olc['instrument']['assetType'] == "COLLECTIVE_INVESTMENT":
+                continue
 
             legid = olc['legId']
             qd[legid] = {}
