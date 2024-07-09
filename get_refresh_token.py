@@ -7,7 +7,8 @@ import argparse
 import schwab
 import yaml
 
-from datastructures import Config
+from datastructures import Config, read_yaml_file
+
 
 def read_json_file(file_path):
     if os.path.exists(file_path):
@@ -105,8 +106,8 @@ if __name__ == '__main__':
     ap.add_argument("--setup", dest="setup", default=False, action="store_true")
     ap.add_argument("--noauth", dest="noauth", default=False, action="store_true")
     args = vars(ap.parse_args())
-    with open(args['appconfig'], 'r') as acfg_fh:
-        app_config = yaml.safe_load(acfg_fh)
+
+    app_config = read_yaml_file(args['appconfig'])
     main(
         appconfig=app_config,
         setup=args['setup'],

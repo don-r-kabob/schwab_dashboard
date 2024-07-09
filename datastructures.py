@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
 import json
+import os
+import shutil
+
+import yaml
 
 
 class Config(object):
@@ -30,3 +34,13 @@ class Config(object):
         return json.dumps(self.__dict__, indent=4)
 
 
+def read_yaml_file(file_path):
+    if not os.path.exists(file_path):
+        shutil.copy2("dashboard_config.default.yaml", "dashboard_config.yaml")
+    try:
+        with open(file_path, 'r') as file:
+            data = yaml.safe_load(file)
+            return data
+    except Exception as e:
+        print(f"Error reading YAML file: {e}")
+        return None
