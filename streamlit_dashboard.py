@@ -121,7 +121,15 @@ def make_todays_stats(
         initial_nlv = ib['liquidationValue']
         nlv_net = current_nlv - initial_nlv
         nlv_perc = nlv_net/initial_nlv
-        bp_available = cb['buyingPowerNonMarginableTrade']
+        try:
+            if sa['type'] == "MARGIN":
+                bp_available = cb['buyingPowerNonMarginableTrade']
+            elif sa['type'] == "CASH":
+                bp_available = cb['cashAvailableForTrading']
+        except KeyError as ke:
+            print(f"Unable to get bp for account {sa['type']}")
+            print(json.dumps(sa, indent=4))
+            bp_available = None
         bp_perc = bp_available/current_nlv
         todays_percent = tp_display/initial_nlv
 
