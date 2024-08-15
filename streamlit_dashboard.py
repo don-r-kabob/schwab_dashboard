@@ -97,7 +97,6 @@ def make_todays_stats(
             #if states.ORDERS_JSON not in st.session_state:
             st.session_state[states.ORDERS_JSON] = schwabdata.get_todays_orders(
                 st.session_state[states.ACTIVE_HASH],
-                conf=config,
                 client=client
             )
             order_json = st.session_state[states.ORDERS_JSON]
@@ -132,6 +131,9 @@ def make_todays_stats(
             bp_available = None
         bp_perc = bp_available/current_nlv
         todays_percent = tp_display/initial_nlv
+        order_count = schwabdata.get_order_count(client=client, account_hash=st.session_state[states.ACTIVE_HASH])
+        #months_orders = schwabdata.get_months_order_count(client=client, account_hash=st.session_state[states.ACTIVE_HASH])
+        months_orders = "API not giving full month"
 
         #todays_premium = round(schwabdata.get_order_option_premium(order_json)*100,2)
         if todays_premium is None:
@@ -145,11 +147,12 @@ def make_todays_stats(
         col_2.write(f"{nlv_disp:.2f}%")
         #col3.write("(Disabled)")
         col_1.write("Today's Premium:")
-        col3    .write(f"{tp_display}")
+        col3.write(f"{tp_display}")
         col_2.write(f"{(todays_percent*100):.2f}%")
         #col_2.write("\t{} ({}%)".format(todays_premium, todays_pct))
-        #col1.write("Today's Orders:")
-        #col_2.write("\t{}".format(order_counts))
+        col_1.write("Today's Orders:")
+        col_2.write("{}".format(order_count))
+        col3.write("{}".format(months_orders))
 
 
 def __account_change(client=None, active_account=None):
@@ -184,14 +187,15 @@ def position_filtering(con: st.container):
             "Filter",
             ["%OTM"]
         )
-        red_alert_df = schwabdata.get_pos_df().drop(columns=['ctype', 'symbol'])
+        #red_alert_df = schwabdata.get_pos_df().drop(columns=['ctype', 'symbol'])
+        red_alert_df = schwabdata.get_pos_df()
         if filter_field == "%OTM":
             pass
-            otm_select_values = ("40", "35", "30", "25", "20", "15", "10")
+            otm_select_values = ("100", "40", "35", "30", "25", "20", "15", "10")
             min_otm_select_value = st.selectbox(
                 "Min Percent OTM",
                 otm_select_values,
-                index=2
+                index=3
             )
             min_otm = int(min_otm_select_value)/100.0
             #print(min_otm)

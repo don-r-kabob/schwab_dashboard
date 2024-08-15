@@ -284,7 +284,7 @@ with data_con:
                         datadf['Value'] = round(datadf['Value']/float(nlv)*100, ndigits=2)
                     fig, ax = plt.subplots()
                     sns.barplot(ax=ax, data=datadf, x="Value", y="Expiration", hue="Measure")
-                    ax.set_title("Outstanding Premium barplot by expiration")
+                    ax.set_title(f"Outstanding Premium Barplot\n {units} by expiration")
                     for container in ax.containers:
                         ax.bar_label(container)
                     fig.tight_layout()

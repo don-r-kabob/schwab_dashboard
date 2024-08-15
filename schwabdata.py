@@ -7,6 +7,8 @@ import schwab
 from schwab.client.base import BaseClient
 import streamlit as st
 import pandas as pd
+
+import shutils
 from datastructures import Config
 from stutils import get_schwab_client
 
@@ -123,17 +125,31 @@ def get_pos_df(client=None, conf=None):
 
 
 
-def get_positions_json(config: Config):
-    client = get_schwab_client(config)
+def get_positions_json(config: Config=None, client=None):
+    if client is None:
+        client = get_schwab_client(config)
     acc_json = client.get_account(config.accountnum, fields=[ACCOUNT_FIELDS.POSITIONS]).json()
     accdata = acc_json['securitiesAccount']
     positions = accdata['positions']
     return positions
 
+def get_position_data(client=None, conf: Config=None, account_hash=None):
+    if client is None and conf is not None:
+        shutils.get_schwab_client(schwab_config=conf)
+    acc_json = client.get_account(account_hash, fields=[ACCOUNT_FIELDS.POSITIONS]).json()
+    try:
+        accdata = acc_json['securitiesAccount']
+        positions = accdata['positions']
+        return positions
+    except KeyError as ke:
+        st.json(acc_json)
+        raise ke
+
+
+
 
 def get_todays_orders(
         ahash = None,
-        conf: Config = None,
         client = None
 ):
     #print("Getting today's orders")
@@ -144,13 +160,68 @@ def get_todays_orders(
     order_res = client.get_orders_for_account(account_hash=ahash, from_entered_datetime=bod, to_entered_datetime=eod)
     return json.loads(order_res.text)
 
-def get_order_count(
+def get_months_orders(
+        ahash = None,
+        client = None
+):
+    #print("Getting today's orders")
+    if client is None:
+        client = get_schwab_client()
+    bom = datetime.today().replace(hour=0, minute=0, second=0, day=1)
+    eod = datetime.today().replace(hour=23, minute=59, second=59)
+    print(bom, eod)
+    order_res = client.get_orders_for_account(
+        account_hash=ahash,
+        from_entered_datetime=bom,
+        to_entered_datetime=eod
+    )
+    #st.write(order_res)
+    #st.write(order_res.text)
+    if isinstance(order_res, list):
+        pass
+        #return order_res
+    elif isinstance(order_res, dict):
+        pass
+        #return order_res
+    else:
+        pass
+        #return order_res.json()
+    ret = json.loads(order_res.text)
+    #st.json(ret)
+    return ret
+
+def get_months_order_count(
+        client: schwab.client.Client,
+        account_hash
+):
+    order_res = get_months_orders(
+        ahash=account_hash,
+        client=client
+    )
+    if isinstance(order_res, dict) or isinstance(order_res, list):
+        order_res = order_res.json()
+    print(json.dumps(order_res, indent=4))
+    st.json(order_res)
+    return len(order_res)
+
+def get_order_count_old(
         conf: Config,
         order_res=None
 ):
     if order_res is None:
         order_res = get_todays_orders(conf=conf)
     return len(order_res)
+
+def get_order_count(
+        client: schwab.client.Client,
+        account_hash
+):
+    order_res = get_todays_orders(
+        ahash=account_hash,
+        client=client
+    )
+    return len(order_res)
+
 
 def get_order_option_premium(orders):
     net_premium = 0

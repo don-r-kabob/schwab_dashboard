@@ -7,6 +7,9 @@ import shutil
 import yaml
 
 
+DEFAULT_CONFIG = "dashboard_config.default.yaml"
+CONFIG = "dashboard_config.yaml"
+
 class Config(object):
     def __init__(self):
         self.apikey = None
@@ -36,7 +39,7 @@ class Config(object):
 
 def read_yaml_file(file_path):
     if not os.path.exists(file_path):
-        shutil.copy2("dashboard_config.default.yaml", "dashboard_config.yaml")
+        shutil.copy2(DEFAULT_CONFIG, CONFIG)
     try:
         with open(file_path, 'r') as file:
             data = yaml.safe_load(file)
