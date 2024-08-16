@@ -1,20 +1,19 @@
 import datetime
 import math
-import sys
 import json
 import argparse
 
 import pandas as pd
 import schwab
 from schwab.client.base import BaseClient
-import yaml
 import streamlit as st
 
+import stutils
 from account import AccountList
 from states import states
 import schwabdata
 import logging
-from datastructures import Config
+from datastructures import Config, read_yaml_file
 from stutils import get_schwab_client
 
 ACCOUNT_FIELDS = BaseClient.Account.Fields
@@ -24,8 +23,9 @@ LOG_LEVEL = logging.DEBUG
 #print(LOG_LEVEL)
 
 
-with open("dashboard_config.yaml", 'r') as dconf_fh:
-    dashconfig = yaml.load(dconf_fh, Loader=yaml.Loader)
+#with open("dashboard_config.yaml", 'r') as dconf_fh:
+ #   dashconfig = yaml.load(dconf_fh, Loader=yaml.Loader)
+dashconfig = read_yaml_file("dashboard_config.yaml")
 REFRESH_TIME_MS = 1000*dashconfig['streamlit']['refreshtimer']
 LAYOUT = dashconfig['streamlit']['layout']
 
@@ -97,7 +97,6 @@ def make_todays_stats(
             #if states.ORDERS_JSON not in st.session_state:
             st.session_state[states.ORDERS_JSON] = schwabdata.get_todays_orders(
                 st.session_state[states.ACTIVE_HASH],
-                conf=config,
                 client=client
             )
             order_json = st.session_state[states.ORDERS_JSON]
@@ -121,9 +120,20 @@ def make_todays_stats(
         initial_nlv = ib['liquidationValue']
         nlv_net = current_nlv - initial_nlv
         nlv_perc = nlv_net/initial_nlv
-        bp_available = cb['buyingPowerNonMarginableTrade']
+        try:
+            if sa['type'] == "MARGIN":
+                bp_available = cb['buyingPowerNonMarginableTrade']
+            elif sa['type'] == "CASH":
+                bp_available = cb['cashAvailableForTrading']
+        except KeyError as ke:
+            print(f"Unable to get bp for account {sa['type']}")
+            print(json.dumps(sa, indent=4))
+            bp_available = None
         bp_perc = bp_available/current_nlv
         todays_percent = tp_display/initial_nlv
+        order_count = schwabdata.get_order_count(client=client, account_hash=st.session_state[states.ACTIVE_HASH])
+        #months_orders = schwabdata.get_months_order_count(client=client, account_hash=st.session_state[states.ACTIVE_HASH])
+        months_orders = "API not giving full month"
 
         #todays_premium = round(schwabdata.get_order_option_premium(order_json)*100,2)
         if todays_premium is None:
@@ -132,15 +142,17 @@ def make_todays_stats(
             #order_counts = schwabdata.get_order_count(client, conf)
         col_1, col_2, col3 = st.columns(3)
         col_1.write("Listed Equity NLV:")
-        col_2.write(f"{current_nlv}")
-        #col3.write(f"{(nlv_perc*100:.2f}%")
-        col3.write("(Disabled)")
+        col3.write(f"{current_nlv}")
+        nlv_disp = nlv_perc*100
+        col_2.write(f"{nlv_disp:.2f}%")
+        #col3.write("(Disabled)")
         col_1.write("Today's Premium:")
-        col_2.write(f"{tp_display}")
-        col3.write(f"{(todays_percent*100):.2f}%")
+        col3.write(f"{tp_display}")
+        col_2.write(f"{(todays_percent*100):.2f}%")
         #col_2.write("\t{} ({}%)".format(todays_premium, todays_pct))
-        #col1.write("Today's Orders:")
-        #col_2.write("\t{}".format(order_counts))
+        col_1.write("Today's Orders:")
+        col_2.write("{}".format(order_count))
+        col3.write("{}".format(months_orders))
 
 
 def __account_change(client=None, active_account=None):
@@ -156,7 +168,8 @@ def __account_change(client=None, active_account=None):
         states.ACCOUNT_LIST: alist,
         states.ACTIVE_HASH: alist.get_hash(active_account)
     }
-    client = get_schwab_client(conf)
+    #client = get_schwab_client(conf)
+    client = stutils.get_schwab_client(conf)
     st.session_state[states.ACCOUNTS_JSON] = json.loads(
         client.get_account(
             alist.get_hash(active_account),
@@ -174,14 +187,15 @@ def position_filtering(con: st.container):
             "Filter",
             ["%OTM"]
         )
-        red_alert_df = schwabdata.get_pos_df().drop(columns=['ctype', 'symbol'])
+        #red_alert_df = schwabdata.get_pos_df().drop(columns=['ctype', 'symbol'])
+        red_alert_df = schwabdata.get_pos_df()
         if filter_field == "%OTM":
             pass
-            otm_select_values = ("40", "35", "30", "25", "20", "15", "10")
+            otm_select_values = ("100", "40", "35", "30", "25", "20", "15", "10")
             min_otm_select_value = st.selectbox(
                 "Min Percent OTM",
                 otm_select_values,
-                index=2
+                index=3
             )
             min_otm = int(min_otm_select_value)/100.0
             #print(min_otm)
@@ -218,8 +232,10 @@ def sidebar_account_select(
 
 
 def make_premium_by_ticker(con:st.container):
-    client = get_schwab_client(st.session_state[states.CONFIG])
-    df = schwabdata.premium_today_df(client=client, config=None)
+    schwab_config = st.session_state[states.CONFIG]
+    client = stutils.get_schwab_client(schwab_config)
+    #client = get_schwab_client(st.session_state[states.CONFIG])
+    df = schwabdata.premium_today_df(client=client, config=schwab_config)
     with con:
         #st.dataframe(df)
         st.header("Premium by ticker today")
@@ -233,7 +249,9 @@ def make_premium_by_ticker(con:st.container):
     return
 
 def sut_container(con: st.container=None, put_con: st.container=None, call_con: st.container=None):
-    client = get_schwab_client(st.session_state[states.CONFIG])
+    schwab_config = st.session_state[states.CONFIG]
+    client = stutils.get_schwab_client(schwab_config)
+    #client = get_schwab_client(st.session_state[states.CONFIG])
     if put_con is None and call_con is None:
         if con is None:
             raise Exception("No Sut Container(s)")
@@ -278,10 +296,22 @@ def sut_container(con: st.container=None, put_con: st.container=None, call_con: 
 
 def main(**argv):
     conf: Config = CONFIG
+    appconf = APP_CONFIG
     #st.json(conf.__dict__)
     st.cache_data(ttl=dashconfig['streamlit']['refreshtimer'])
-    client = schwab.auth.easy_client(conf.apikey, conf. apisecretkey, conf.callbackuri, conf.tokenpath)
-    accounts_json = client.get_account_numbers().json()
+    #client = get_schwab_client(conf)
+    client = stutils.get_schwab_cache_client(appconfig=appconf, _schwab_config=conf)
+    if client is None:
+        raise Exception("Unable to create schwab client in main")
+
+    try:
+        accounts_json = client.get_account_numbers().json()
+    except Exception as e:
+        try:
+            client = stutils.get_schwab_cache_client(appconfig=appconf, _schwab_config=conf)
+            accounts_json = client.get_account_numbers().json()
+        except Exception as e:
+            raise e
     alist = AccountList(jdata=accounts_json)
     st.session_state[states.ACCOUNT_LIST] = alist
     acc_json = None
@@ -340,9 +370,8 @@ if __name__ == '__main__':
     # Currently not implemented and is hard coded to be true
     ap.add_argument("--update", default=False, action="store_true")
     args = vars(ap.parse_args())
-    with open(args['appconfig'], 'r') as ac_fh:
-        APP_CONFIG = yaml.safe_load(ac_fh)
-    CONFIG.read_config(APP_CONFIG['schwab']['configfile'])
+    APP_CONFIG = stutils.get_cache_appconfig(args['appconfig'])
+    CONFIG = stutils.get_cache_config(APP_CONFIG['schwab']['configfile'])
     st.session_state[states.CONFIG_FILE] = APP_CONFIG['schwab']['configfile']
     st.session_state[states.TOKEN_FILE] = APP_CONFIG['schwab']['tokenfile']
     st.session_state[states.CONFIG] = CONFIG

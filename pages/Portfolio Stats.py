@@ -2,10 +2,13 @@ import sys
 import os
 
 import yaml
+from schwab.client.base import BaseClient
+from schwab.orders.options import OptionSymbol
 
 import schwabdata
 import stutils
 from account import AccountList
+from datastructures import Config
 
 script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(script_path)
@@ -19,6 +22,9 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import streamlit_dashboard as sd
+
+
+ACCOUNT_FIELDS = BaseClient.Account.Fields
 
 with open("dashboard_config.yaml", 'r') as dconf_fh:
     dashconfig = yaml.load(dconf_fh, Loader=yaml.Loader)
@@ -53,10 +59,9 @@ ptype = "Barplot"
 
 def plot_open_contracts_by_expiration(plot_type):
     global CONFIG, FIELDS
-    conf = CONFIG
-    print(conf)
-    client = tda.auth.easy_client(conf.apikey, conf.callbackuri, conf.tokenpath)
-    acc_json = client.get_account(conf.accountnum, fields=[FIELDS.POSITIONS]).json()
+    conf: Config = CONFIG
+    client = stutils.get_schwab_client(conf)
+    acc_json = client.get_account(st.session_state[states.ACTIVE_HASH], fields=[ACCOUNT_FIELDS.POSITIONS]).json()
     accdata = acc_json['securitiesAccount']
     positions = accdata['positions']
     p = {}
@@ -66,8 +71,9 @@ def plot_open_contracts_by_expiration(plot_type):
     for pentry in positions:
         pins = pentry['instrument']
         if pins['assetType'] == "OPTION":
-            raw = pentry["instrument"]['symbol'].split("_")[1][0:6]
-            raw_exp = raw[4] + raw[5] + raw[0] + raw[1] + raw[2] + raw[3]
+            res_opt_sym = pentry['instrument']['symbol']
+            sym = OptionSymbol.parse_symbol(symbol=res_opt_sym)
+            raw_exp = sym.expiration_date.strftime('%y%m%d')
             if raw_exp not in p:
                 p[raw_exp] = {
                 "long": 0.0,
@@ -81,7 +87,7 @@ def plot_open_contracts_by_expiration(plot_type):
     #df = pd.DataFrame.from_dict(p, orient='columns')
     df = pd.DataFrame(d)
     df.columns = ['exp', 'ptype', 'count']
-    print(df.head())
+    df = df.sort_values("exp")
     if plot_type == "Barplot":
         fig, ax = plt.subplots()
         sns.barplot(
@@ -156,7 +162,7 @@ with plot_control_con:
         (
             "None",
             #"Percent OTM",
-            #"Open Contracts",
+            "Open Contracts",
             "Outstanding premium from open positions",
             #"Daily Premium"
         ),
@@ -201,16 +207,17 @@ with plot_control_con:
             (
                 "None",
                 "Expiration"
-            )
+            ),
+            index=1
         )
         if plot_by == "Expiration":
             plot_type = st.selectbox(
                 "Open Contracts by Expiration - How?",
                 (
-                    "Table"
-                    "Barplot",
+                    "Table",
+                    "Barplot"
                 ),
-                index=0
+                index=1
             )
     if plot_what == "Outstanding premium from open positions":
         by_index = 0
@@ -260,7 +267,16 @@ with data_con:
             if plot_by == "Expiration":
                 if plot_type == "Barplot":
                     datadf = get_outstanding_premium_by_expiration().sort_values("Expiration")
+                    expirations_list = datadf['Expiration'].unique()
                     #st.dataframe(datadf)
+                    exp_filter = st.multiselect(
+                        label="Expiration Filter",
+                        options=expirations_list
+                    )
+                    datadf = datadf.loc[
+                        ~(datadf['Expiration'].isin(exp_filter)),
+                        :
+                    ]
                     if hue_set != "All":
                         datadf = datadf.loc[datadf['Measure']==hue_set,:]
                     if units == "Percent":
@@ -268,12 +284,18 @@ with data_con:
                         datadf['Value'] = round(datadf['Value']/float(nlv)*100, ndigits=2)
                     fig, ax = plt.subplots()
                     sns.barplot(ax=ax, data=datadf, x="Value", y="Expiration", hue="Measure")
-                    ax.set_title("Outstanding Premium barplot by expiration")
+                    ax.set_title(f"Outstanding Premium Barplot\n {units} by expiration")
                     for container in ax.containers:
                         ax.bar_label(container)
                     fig.tight_layout()
                 if plot_type == "Table":
                     table = get_outstanding_premium_by_expiration().sort_values("Expiration")
+        elif plot_what == "Open Contracts":
+            if plot_by == "Expiration":
+                if plot_type == "Barplot":
+                    fig, ax = plot_open_contracts_by_expiration(plot_type)
+                elif plot_type == "Table":
+                    pass
 
 
 if fig is not None:

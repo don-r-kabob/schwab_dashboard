@@ -8,4 +8,11 @@ schwab:
   tokenfile: schwab.token_file.json
 
 app:
-  version: 0.1.5
+  version: 2.0.0
+  aws: false
+  gcp: false
+
+aws:
+  dynamodb:
+    table:
+    primary_key:
