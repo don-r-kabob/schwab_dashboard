@@ -242,9 +242,19 @@ def get_order_option_premium(orders):
             ot = order['orderType']
             if ot == "TRAILING_STOP":
                 continue
-            price = order['price']
-            quant = order['filledQuantity']
-            tot = price * quant
+            try:
+                price = order['price']
+                quant = order['filledQuantity']
+                tot = price * quant
+            except KeyError:
+                tot = 0
+                if order['orderType'] == "MARKET":
+                    for oac in order['orderActivityCollection']:
+                        for el in oac['executionLegs']:
+                            tot += el['price'] * el['quantity']
+
+
+
             pe = None
             cot = order['complexOrderStrategyType']
             if cot == "NONE":
@@ -271,6 +281,7 @@ def get_order_option_premium(orders):
         except Exception as e:
             #print(order)
             print(e)
+            logging.exception(order)
             raise e
     #print(json.dumps(orders, indent=4))
     return net_premium
