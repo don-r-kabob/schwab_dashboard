@@ -362,9 +362,13 @@ def sut_test(pjson, sutmax=-1):
     res = []
     unweighed_calc = {
         'CALL_COUNT': 0,
+        'LONG_CALL': 0,
+        'SHORT_CALL': 0,
         'CALL_REMAINING': sutmax,
         'CALL_PCT_USED': 0,
         'PUT_COUNT': 0,
+        'LONG_PUT': 0,
+        'SHORT_PUT': 0,
         'PUT_REMAINING': sutmax,
         'PUT_PCT_USED': 0,
         "type": "unweighted"
@@ -382,6 +386,8 @@ def sut_test(pjson, sutmax=-1):
             print(json.dumps(pos, indent=4))
             print(ke)
             raise ke
+        unweighed_calc[f'LONG_{otype}'] += pos['longQuantity']
+        unweighed_calc[f'SHORT_{otype}'] += pos['shortQuantity']
         unweighed_calc[count_type] -= pos['shortQuantity']
         unweighed_calc[count_type] += pos['longQuantity']
         unweighed_calc[remaining_type] -= pos['shortQuantity']

@@ -271,6 +271,8 @@ def sut_container(con: st.container=None, put_con: st.container=None, call_con: 
         put_method = st.selectbox("SUT_put_method", methods)
         mdf = sdf.loc[put_method,:]
         puts = [
+            ['Short Puts', -int(mdf ['SHORT_PUT'])],
+            ['Long Puts', int(mdf['LONG_PUT'])],
             ["Put Count", int(mdf['PUT_COUNT'])],
             ["SUT Max", sutmax],
             ["Puts remaining", int(mdf['PUT_REMAINING'])],
@@ -283,6 +285,8 @@ def sut_container(con: st.container=None, put_con: st.container=None, call_con: 
         mdf = sdf.loc[call_method, :]
         calls = [
             # ["SUT Max", fb.ACCOUNT_DATA['Max_Short_Units']],
+            ['Short Calls', -int(mdf ['SHORT_CALL'])],
+            ['Long Calls', int(mdf['LONG_CALL'])],
             ["Unit Count", int(mdf['CALL_COUNT'])],
             ["SUT Max", sutmax],
             ["Units remaining", int(mdf['CALL_REMAINING'])],
