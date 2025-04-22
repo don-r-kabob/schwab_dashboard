@@ -71,10 +71,22 @@ def _get_pos_df(client=None, conf=None):
             quotesj = []
         #st.json(quotesj)
         curr_price = {}
+        if "errors" in quotesj:
+            for isym in quotesj['errors']['invalidSymbols']:
+                #del(symbols[isym])
+                pass
         for ticker in quotesj:
+            if ticker == "errors":
+                continue
             tdata = quotesj[ticker]
-            curr_price[ticker] = tdata['quote']['lastPrice']
-            pdf.loc[pdf['underlyingSymbol']==ticker, 'spotPrice'] = float(tdata['quote']['lastPrice'])
+            try:
+                curr_price[ticker] = tdata['quote']['lastPrice']
+                pdf.loc[pdf['underlyingSymbol']==ticker, 'spotPrice'] = float(tdata['quote']['lastPrice'])
+            except KeyError as ke:
+                st.json(quotesj)
+                st.json(tdata)
+                print(json.dumps(tdata, indent=4))
+                raise ke
     except Exception as e:
         raise e
     pdf = pdf.loc[pdf['assetType']=="OPTION", :]
