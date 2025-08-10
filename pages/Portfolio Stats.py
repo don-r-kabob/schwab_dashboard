@@ -103,7 +103,7 @@ def plot_open_contracts_by_expiration(plot_type):
         fig.tight_layout()
         return fig,ax
 
-def get_outstanding_premium_by_expiration():
+def get_outstanding_premium_by_expiration(show_short=True, show_long=True):
     global CONFIG
     conf = CONFIG
     #print(conf)
@@ -118,11 +118,20 @@ def get_outstanding_premium_by_expiration():
     #df = pd.DataFrame()
     #df.columns = ['exp', 'ptype', 'count']
     pos_df = schwabdata._get_pos_df(conf=CONFIG)
+    if show_short is False:
+        pos_df = pos_df.loc[(pos_df['shortQuantity'] <= 0), :]
+    if show_long is False:
+        pos_df = pos_df.loc[(pos_df['longQuantity'] <= 0), :]
+    #st.dataframe(pos_df.head())
     pos_df['Opening Price'] = pos_df['averagePrice']*pos_df['quantity']*-1
     pos_df['Current Mark'] = pos_df['currentValue']*pos_df['quantity']
     #st.dataframe(pos_df.head())
     for pentry in positions:
         #st.json(pentry)
+        if show_short is False and pentry['shortQuantity'] > 0:
+            continue
+        if show_long is False and pentry['longQuantity'] > 0:
+            continue
         symbol = pentry["instrument"]['symbol'][0:6].rstrip()
         #st.write(symbol)
         if symbol == "SPX" or symbol == "SPXW":
@@ -160,11 +169,11 @@ with plot_control_con:
     plot_what = st.selectbox(
         "Plot what?",
         (
-            "None",
-            #"Percent OTM",
-            "Open Contracts",
             "Outstanding premium from open positions",
-            #"Daily Premium"
+            "Open Contracts",
+            "Percent OTM",
+            "Daily Premium",
+            "None"
         ),
         index=0
     )
@@ -266,9 +275,28 @@ with data_con:
         if plot_what == "Outstanding premium from open positions":
             if plot_by == "Expiration":
                 if plot_type == "Barplot":
-                    datadf = get_outstanding_premium_by_expiration().sort_values("Expiration")
+                    cleft, cright = st.columns(2)
+                    with cleft:
+                        show_opening_price = st.checkbox(
+                            "Show Opening Price",
+                            value=True
+                        )
+                        show_current_mark = st.checkbox(
+                            "Show Current Mark",
+                            value=True
+                        )
+                    with cright:
+                        show_short = st.checkbox(
+                            "Show Short Positions",
+                            value=True
+                        )
+                        show_long = st.checkbox(
+                            "Show Long Positions",
+                            value=True
+                        )
+                    datadf = get_outstanding_premium_by_expiration(show_short=show_short, show_long=show_long).sort_values("Expiration")
                     expirations_list = datadf['Expiration'].unique()
-                    #st.dataframe(datadf)
+                    st.dataframe(datadf)
                     exp_filter = st.multiselect(
                         label="Expiration Filter",
                         options=expirations_list
@@ -282,6 +310,11 @@ with data_con:
                     if units == "Percent":
                         nlv = schwabdata.get_account_nlv(st.session_state[states.ACCOUNTS_JSON])
                         datadf['Value'] = round(datadf['Value']/float(nlv)*100, ndigits=2)
+                    if show_opening_price is False:
+                        datadf = datadf.loc[datadf['Measure'] != "Opening Price", :]
+                    if show_current_mark is False:
+                        datadf = datadf.loc[datadf['Measure'] != "Current Mark", :]
+                    st.dataframe(datadf)
                     fig, ax = plt.subplots()
                     sns.barplot(ax=ax, data=datadf, x="Value", y="Expiration", hue="Measure")
                     ax.set_title(f"Outstanding Premium Barplot\n {units} by expiration")
