@@ -296,7 +296,7 @@ with data_con:
                         )
                     datadf = get_outstanding_premium_by_expiration(show_short=show_short, show_long=show_long).sort_values("Expiration")
                     expirations_list = datadf['Expiration'].unique()
-                    st.dataframe(datadf)
+                    #st.dataframe(datadf)
                     exp_filter = st.multiselect(
                         label="Expiration Filter",
                         options=expirations_list
@@ -314,7 +314,7 @@ with data_con:
                         datadf = datadf.loc[datadf['Measure'] != "Opening Price", :]
                     if show_current_mark is False:
                         datadf = datadf.loc[datadf['Measure'] != "Current Mark", :]
-                    st.dataframe(datadf)
+                    #st.dataframe(datadf)
                     fig, ax = plt.subplots()
                     sns.barplot(ax=ax, data=datadf, x="Value", y="Expiration", hue="Measure")
                     ax.set_title(f"Outstanding Premium Barplot\n {units} by expiration")
