@@ -237,10 +237,11 @@ def get_order_count(
 
 def get_order_option_premium(orders):
     net_premium = 0
+    today_df = premium_today_df()
     for order in orders:
         try:
-            if order['status'] != "FILLED":
-                continue
+            #if order['status'] != "FILLED":
+            #    continue
             olc = order['orderLegCollection']
             ol_skip = False
             for ol in olc:
@@ -264,9 +265,6 @@ def get_order_option_premium(orders):
                     for oac in order['orderActivityCollection']:
                         for el in oac['executionLegs']:
                             tot += el['price'] * el['quantity']
-
-
-
             pe = None
             cot = order['complexOrderStrategyType']
             if cot == "NONE":
@@ -314,7 +312,9 @@ def premium_today_df(client: schwab.client.Client, config: Config):
     l = []
     for order in orders:
         qd = {}
-        if order['status'] != "FILLED":
+        if order['status'] == "REJECTED":
+            continue
+        if 'orderActivityCollection' not in order:
             continue
         t += 1
         if t==1:
@@ -350,6 +350,9 @@ def premium_today_df(client: schwab.client.Client, config: Config):
             qd[legid]['qmod'] = quant
 
         oac_count = 0
+        if 'orderActivityCollection' not in order:
+            st.json(order)
+            continue
         for oac in order['orderActivityCollection']:
             if oac['executionType'] != "FILL":
                 continue

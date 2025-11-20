@@ -108,7 +108,11 @@ def make_todays_stats(
 
             #if states.ACCOUNTS_JSON not in st.session_state:
         #st.json(order_json[4])
-        todays_premium = schwabdata.get_order_option_premium(order_json)
+        today_order_df = schwabdata.premium_today_df(client=client, config=config)
+        if len(today_order_df) == 0:
+            todays_premium = 0
+        else:
+            todays_premium = today_order_df['total'].sum()
         #st.stop()
         tp_display = todays_premium*100
 
